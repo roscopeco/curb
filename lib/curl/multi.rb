@@ -1,6 +1,9 @@
-module Curl
+require 'curl/curb_core_ffi'
+require 'curl/errors'
 
+module Curl
   class Multi
+    
     class << self
       # call-seq:
       #   Curl::Multi.get(['url1','url2','url3','url4','url5'], :follow_location => true) do|easy|
@@ -243,6 +246,228 @@ module Curl
         raise errors unless errors.empty?
       end
 
+
+      def default_timeout(*args)
+      end
+
+      def error(code)
+        if clz = Err::MULTI_ERROR_MAP[code]
+          return [clz, Core.multi_strerror(code)]
+        else
+          return [Err::UnknownError, "An unknown CURL Multi error occurred (mcode: #{code})"]
+        end
+      end      
     end
+
+    def initialize
+      @active = 0
+      @running = 0      
+      @timeout = ::FFI::MemoryPointer.new(:long)
+      @timeval = Core::Timeval.new
+      @fd_read = Core::FDSet.new
+      @fd_write = Core::FDSet.new
+      @fd_excep = Core::FDSet.new
+      @max_fd = ::FFI::MemoryPointer.new(:int)      
+    end    
+
+    # call-seq:
+    # multi = Curl::Multi.new
+    # easy = Curl::Easy.new('url')
+    #
+    # multi.add(easy)
+    #
+    # Add an easy to the multi stack
+    def add(curl)
+      # make sure this isn't already added
+      return nil if easies.include?(curl)
+
+      curl.setup
+
+      mcode = Core.multi_add_handle(handle, curl.handle)
+      if mcode != :CALL_MULTI_PERFORM && mcode != :OK
+        raise_error(mcode)
+      end
+      
+      curl.multi = self
+      easies << curl
+    end
+
+    def running?
+      easies.size > 0 || (!defined?(@running_count) || running_count > 0)
+    end    
+
+    def requests(*args)
+    end
+
+    def pipeline=(*args)
+    end
+
+    def max_connects=(*args)
+    end      
+
+    def idle?(*args)
+    end
+
+    def cancel!(*args)
+    end            
+
+    def verbose?(*args)
+    end
+
+    # call-seq:
+    # multi = Curl::Multi.new
+    # easy1 = Curl::Easy.new('url')
+    # easy2 = Curl::Easy.new('url')
+    #
+    # multi.add(easy1)
+    # multi.add(easy2)
+    #
+    # multi.perform do
+    #  # while idle other code my execute here
+    # end
+    #
+    # Run multi handles, looping selecting when data can be transfered
+    def perform(*args)
+      yield if block_given?
+      while running?
+        run
+        timeout = get_timeout
+        next if timeout == 0
+        reset_fds
+        set_fds(timeout)
+        yield if block_given?
+      end
+      nil
+    end
+
+    def remove(*args)
+    end
+
+    # The underlying FFI handle to the multi. Leave this alone.
+    # It would be private but easy needs it right now...
+    #
+    # If the handle hasn't been snagged yet, this sets it up
+    # as an autopointer that should take care of cleanup automagically.
+    def handle
+      @handle ||= FFI::AutoPointer.new(Core.multi_init, Core.method(:multi_cleanup)) 
+    end
+
+    def easies
+      @easies ||= []
+    end        
+
+    private
+    # Get timeout.
+    #
+    # @example Get timeout.
+    #   multi.get_timeout
+    #
+    # @return [ Integer ] The timeout.
+    #
+    # @raise [ Ethon::Errors::MultiTimeout ] If getting the timeout fails.
+    def get_timeout
+      code = Core.multi_timeout(handle, @timeout)
+      raise_error(code) unless code == :OK
+      timeout = @timeout.read_long
+      timeout = 1 if timeout < 0
+      timeout
+    end
+
+    # Reset file describtors.
+    #
+    # @example Reset fds.
+    #   multi.reset_fds
+    #
+    # @return [ void ]
+    def reset_fds
+      @fd_read.clear
+      @fd_write.clear
+      @fd_excep.clear
+    end
+
+    # Set fds.
+    #
+    # @example Set fds.
+    #   multi.set_fds
+    #
+    # @return [ void ]
+    #
+    # @raise [ Ethon::Errors::MultiFdset ] If setting the file descriptors fails.
+    # @raise [ Ethon::Errors::Select ] If select fails.
+    def set_fds(timeout)
+      code = Core.multi_fdset(handle, @fd_read, @fd_write, @fd_excep, @max_fd)
+      raise_error(code) unless code == :OK
+      max_fd = @max_fd.read_int
+      if max_fd == -1
+        sleep(0.001)
+      else
+        @timeval[:sec] = timeout / 1000
+        @timeval[:usec] = (timeout * 1000) % 1000000
+        loop do
+          code = Core.select(max_fd + 1, @fd_read, @fd_write, @fd_excep, @timeval)
+          break unless code < 0 && ::FFI.errno == Errno::EINTR::Errno
+        end
+        raise Err::CurlError.new("select Errno: " + ::FFI.errno) if code < 0
+      end
+    end
+
+    # Run.
+    #
+    # @example Run
+    #   multi.run
+    #
+    # @return [ void ]
+    def run
+      running_count_pointer = FFI::MemoryPointer.new(:int)
+      begin code = trigger(running_count_pointer) end while code == :CALL_MULTI_PERFORM
+      check
+    end
+
+    # Trigger.
+    #
+    # @example Trigger.
+    #   multi.trigger
+    #
+    # @return [ Symbol ] The Curl.multi_perform return code.
+    def trigger(running_count_pointer)
+      code = Core.multi_perform(handle, running_count_pointer)
+      @running_count = running_count_pointer.read_int
+      code
+    end    
+
+    # Check.
+    #
+    # @example Check.
+    #   multi.check
+    #
+    # @return [ void ]
+    def check
+      msgs_left = ::FFI::MemoryPointer.new(:int)
+      while true
+        msg = Core.multi_info_read(handle, msgs_left)
+        break if msg.null?
+        next if msg[:code] != :done
+        easy = easies.find { |e| e.handle == msg[:easy_handle] }
+        easy.last_result_code = msg[:data][:multi_code]
+        delete(easy)
+        easy.complete
+      end
+    end
+
+    def delete(easy)
+      if easies.delete(easy)
+        code = Core.multi_remove_handle(handle, easy.handle)
+        raise_error(code) unless code == :OK
+      end
+    end
+
+    def raise_error(mcode)  
+      err = Multi.error(mcode)
+      raise err.first.new(err.last)
+    end
+
+    def running_count
+      @running_count ||= nil
+    end    
   end
 end

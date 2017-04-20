@@ -1,11 +1,8 @@
+require 'curl/curb_core_ffi'
+require 'curl/errors'
+
 module Curl
   class Easy
-
-    alias post http_post
-    alias put http_put
-    alias body body_str
-    alias head header_str
-
     class Error < StandardError
       attr_accessor :message, :code
       def initialize(code, msg)
@@ -14,6 +11,417 @@ module Curl
       end
     end
 
+    class << self
+      def error(code)
+        if clz = Err::EASY_ERROR_MAP[code]
+          return [clz, Core.easy_strerror(code)]
+        else
+          return [Err::UnknownError, "An unknown CURL error occurred"]
+        end
+      end
+    end
+    
+    def initialize(url = nil)
+      @url = url if !url.nil?
+
+      # defaults
+      @ssl_verify_peer = true
+      @ssl_verify_host_integer = 1
+      @use_netrc = false
+      @unrestricted_auth = false
+      @proxy_tunnel = false      
+      @header_in_body = false
+      @http_auth_types = :basic
+
+      yield self if block_given?      
+    end
+          
+    def body_str
+      @body_str
+    end    
+
+    def header_str(*args)
+      @header_str
+    end
+
+    def reset(*args)
+    end
+
+    def put_data=(*args)
+    end
+
+    def post_body=(*args)
+    end
+
+    def on_progress(&handler)
+      old, @on_progress = @on_progress, handler
+      old      
+    end
+
+    def on_header(&handler)
+      old, @on_header = @on_header, handler
+      old      
+    end
+
+    def on_body(&handler)
+      old, @on_body = @on_body, handler
+      old      
+    end
+    
+    def on_success(&handler)
+      old, @on_success = @on_success, handler
+      old      
+    end
+
+    def on_redirect(&handler)
+      old, @on_redirect = @on_redirect, handler
+      old      
+    end
+
+    def on_missing(&handler)
+      old, @on_missing = @on_missing, handler
+      old      
+    end    
+    
+    def on_failure(&handler)
+      old, @on_failure = @on_failure, handler
+      old      
+    end
+
+    def on_complete(&handler)
+      old, @on_complete = @on_complete, handler
+      old      
+    end
+
+    def on_debug(&handler)
+      old, @on_debug = @on_debug, handler
+      old      
+    end
+
+    def url(*args)
+      @url
+    end    
+
+    def complete
+      # maybe run on_complete? I think Curl does that...
+      # Don't think this is needed, it came over from Ethon...
+    end    
+
+    attr_accessor :username
+    attr_accessor :password
+    attr_accessor :userpwd
+
+    attr_accessor :useragent
+
+    def use_netrc=(bool)
+      @use_netrc = (bool ? true : false)
+    end
+
+    def use_netrc?
+      @use_netrc
+    end
+
+    def unrestricted_auth=(bool)
+      @unrestricted_auth = (bool ? true : false)
+    end
+    
+    def unrestricted_auth?
+      @unrestricted_auth
+    end
+
+    def unescape(*args)
+    end
+
+    # TODO this should be readonly...
+    attr_accessor :multi
+
+    def ssl_verify_peer?
+      @ssl_verify_peer
+    end
+
+    def ssl_verify_peer=(bool)
+      @ssl_verify_peer = (bool ? true : false)
+    end
+    
+    def resolve_mode(*args)
+    end
+
+    def headers=(headers)
+      @headers = headers
+    end
+
+    def headers
+      @headers ||= {}
+    end
+
+    def escape(*args)
+    end
+
+    def verbose?
+    end
+
+    attr_accessor :http_auth_types
+    attr_accessor :proxy_auth_types
+    attr_accessor :proxy_type
+    attr_accessor :proxypwd
+
+    attr_accessor :encoding
+
+    def proxy_tunnel=(bool)
+      @proxy_tunnel = (bool ? true : false)
+    end
+
+    def proxy_tunnel?
+      @proxy_tunnel
+    end
+
+    def proxy_port=(port)
+      if (!port.nil?)
+        port = port.to_i
+        raise ArgumentError.new("Invalid proxy port") unless port > 0 && port < 65536
+      end
+      @proxy_port = port
+    end
+    
+    def proxy_port
+      @proxy_port
+    end
+
+    def proxy_url
+      @proxy_url
+    end
+
+    # The last result code (a symbol)    
+    attr_accessor :last_result_code
+
+    # Last result as a numeric - API compatible
+    def last_result
+      Core.sym2num(last_result_code)
+    end
+    
+    def local_port=(port)
+      if (!port.nil?)
+        port = port.to_i
+        raise ArgumentError.new("Invalid local port") unless port > 0 && port < 65536
+      end
+      @local_port = port
+    end
+    
+    def local_port
+      @local_port
+    end
+
+    def local_port_range=(port)
+      if (!port.nil?)
+        port = port.to_i
+        raise ArgumentError.new("Invalid local port range") unless port > 0 && port < 65536
+      end
+      @local_port_range = port
+    end
+    
+    def local_port_range
+      @local_port_range
+    end
+
+    def multipart_form_post=(bool)
+      @multipart_form_post = (bool ? true : false)
+    end
+    
+    def multipart_form_post?
+      @multipart_form_post
+    end
+
+    attr_accessor :max_redirects
+    attr_accessor :low_speed_time
+    attr_accessor :low_speed_limit
+
+    def fetch_file_time=(bool)
+      @fetch_file_time = (bool ? true : false)
+    end
+    
+    def fetch_file_time?
+      @fetch_file_time
+    end    
+    
+    def ignore_content_length=(bool)
+      @ignore_content_length = (bool ? true : false)
+    end
+    
+    def ignore_content_length?
+      @ignore_content_length
+    end
+
+    def header_in_body=(bool)
+      @header_in_body = (bool ? true : false)
+    end
+    
+    def header_in_body?
+      @header_in_body
+    end
+
+    attr_reader :last_effective_url
+
+    attr_accessor :timeout, :timeout_ms
+    attr_accessor :connect_timeout, :connect_timeout_ms
+    attr_accessor :dns_cache_timeout
+    attr_accessor :ftp_response_timeout
+
+    attr_accessor :cacert
+    attr_accessor :cert
+    attr_accessor :certtype
+    attr_accessor :certpassword
+    attr_accessor :cert_key
+
+    def response_code
+      ptr = Core::IntPtr.new
+      Core.easy_getinfo(handle, :RESPONSE_CODE, ptr)
+      ptr[:value]
+    end  
+
+    # The underlying FFI handle to the multi. Leave this alone.
+    # It would be private but easy needs it right now...
+    def handle
+      @handle ||= FFI::AutoPointer.new(Core.easy_init, Core.method(:easy_cleanup)) 
+    end
+
+    def close
+      # TODO slists?
+      # TODO this makes it segfault...
+      #Core.easy_cleanup(handle)    
+      #h = handle    # get new handle
+      #multi = nil
+    end    
+
+    # TODO hide this, it's an implementation detail
+    def setup
+      url = @url
+      @body_str = nil
+
+      # TODO get headers
+      # TODO get ftp commands
+
+      if url.nil?
+        raise(Err::CurlError.new("No URL Supplied"))
+      end
+
+      Core.easy_setopt(handle, :URL, url)
+
+      Core.easy_setopt(handle, :USERNAME, username) if !username.nil?
+      Core.easy_setopt(handle, :PASSWORD, password) if !password.nil?
+      Core.easy_setopt(handle, :USERPWD, userpwd) if !userpwd.nil?
+      if use_netrc?
+        Core.easy_setopt(handle, :NETRC, :optional)
+      else
+        Core.easy_setopt(handle, :NETRC, :ignored)
+      end
+      Core.easy_setopt(handle, :UNRESTRICTED_AUTH, unrestricted_auth? ? 1 : 0)
+      
+      
+      Core.easy_setopt(handle, :HTTPAUTH, 16)
+      # TODO Core.easy_setopt(handle, :HTTPAUTH, http_auth_types)
+      
+
+      Core.easy_setopt(handle, :PROXY, proxy_url) if !proxy_url.nil?
+      Core.easy_setopt(handle, :PROXYUSERPWD, proxypwd) if !proxypwd.nil?
+
+      Core.easy_setopt(handle, :PROXYPORT, proxy_port) if !proxy_port.nil?
+      Core.easy_setopt(handle, :LOCALPORT, local_port) if !local_port.nil?
+      Core.easy_setopt(handle, :LOCALPORTRANGE, local_port_range) if !local_port_range.nil?
+
+      Core.easy_setopt(handle, :ENCODING, encoding) if !encoding.nil?
+
+      Core.easy_setopt(handle, :TIMEOUT, timeout) if !timeout.nil?
+      Core.easy_setopt(handle, :TIMEOUT_MS, timeout_ms) if !timeout_ms.nil?
+      Core.easy_setopt(handle, :CONNECTTIMEOUT, connect_timeout) if !connect_timeout.nil?
+      Core.easy_setopt(handle, :CONNECTTIMEOUT_MS, connect_timeout_ms) if !connect_timeout_ms.nil?
+      Core.easy_setopt(handle, :DNS_CACHE_TIMEOUT, dns_cache_timeout) if !dns_cache_timeout.nil?
+      Core.easy_setopt(handle, :FTP_RESPONSE_TIMEOUT, ftp_response_timeout) if !ftp_response_timeout.nil?
+
+      Core.easy_setopt(handle, :LOW_SPEED_LIMIT, low_speed_limit) if !low_speed_limit.nil?
+      Core.easy_setopt(handle, :LOW_SPEED_TIME, low_speed_limit) if !low_speed_time.nil?
+
+      # General options
+      Core.easy_setopt(handle, :HEADER, header_in_body? ? 1 : 0)
+      Core.easy_setopt(handle, :FOLLOWLOCATION, follow_location? ? 1 : 0)
+      Core.easy_setopt(handle, :MAXREDIRS, max_redirects) if !max_redirects.nil?
+
+      Core.easy_setopt(handle, :HTTPPROXYTUNNEL, proxy_tunnel? ? 1 : 0)
+      Core.easy_setopt(handle, :FILETIME, fetch_file_time? ? 1 : 0)
+
+      Core.easy_setopt(handle, :SSL_VERIFYPEER, ssl_verify_peer? ? 1 : 0)
+      Core.easy_setopt(handle, :SSL_VERIFYHOST, ssl_verify_host? ? 1 : 0)
+
+      # SSL
+      Core.easy_setopt(handle, :SSLCERT, cert) if !cert.nil?
+      Core.easy_setopt(handle, :SSLCERTTYPE, certtype) if !certtype.nil?
+      Core.easy_setopt(handle, :SSLCERTPASSWORD, certpassword) if !certpassword.nil?
+      Core.easy_setopt(handle, :SSLKEY, cert_key) if !cert_key.nil?
+      Core.easy_setopt(handle, :CAINFO, cacert) if !cacert.nil?
+
+
+      # CALLBACKS
+      Core.easy_setopt_string_function(handle, :WRITEFUNCTION, method(:body_callback).to_proc)
+      Core.easy_setopt_string_function(handle, :HEADERFUNCTION, method(:header_callback).to_proc)
+      if !@on_progress.nil?
+        Core.easy_setopt_progress_function(handle, :PROGRESSFUNCTION, method(:progress_callback).to_proc)
+        Core.easy_setopt(handle, :NOPROGRESS, 0)
+      else
+        Core.easy_setopt(handle, :NOPROGRESS, 1)
+      end
+
+      # TODO The metric fuck-ton of other setup that needs doing...
+    end
+
+    #################### CALLBACK IMPLEMENTATIONS ############################
+    private
+    # Note: these MUST return a Numeric, or "hilarity" will ensue. FFI uses NUM2LL to convert
+    # the return value, so if you get weird TypeErrors with an incomplete stack trace, check 
+    # this first.
+    #
+    # Curl expects the return to be size * n, anything else signals a write error.
+    #
+    # Originally the idea was to pass through the proc in WRITEDATA and retrieve
+    # it here, but that could cause problems if the proc gets GC'd (or moved e.g. on JRuby)
+    # so now we don't do that...
+
+    # Passed to Curl to handle body data.
+    def body_callback(str, size, n, ignored)
+      if (@on_body)
+        @on_body.call(str)
+      else
+        (@body_str ||= "") << str
+      end
+      size * n
+    end     
+
+    # Passed to Curl to handle header data.
+    def header_callback(str, size, n, ignored)
+      if (@on_header)
+        @on_header.call(str)
+      else
+        (@header_str ||= "") << str
+      end
+      size * n
+    end
+
+    def progress_callback(ignored, dltotal, dlnow, ultotal, ulnow)
+      ret = 0
+      if (@on_progress)
+        begin
+          @on_progress.call([dltotal, dlnow, ultotal, ulnow])
+        rescue => exception
+          ret = -1
+        end        
+      end  
+      ret    
+    end    
+
+    public
+    ################## END CALLBACK IMPLEMENTATIONS ##########################
+
+    alias body body_str
+    alias head header_str
+    
     #
     # call-seq:
     #   easy.status  => String
@@ -38,20 +446,21 @@ module Curl
       end
 
       begin
-        setopt(option, val)
+        Core.easy_setopt(handle, option, val)
       rescue TypeError
         raise TypeError, "Curb doesn't support setting #{opt} [##{option}] option"
       end
     end
 
-    #
     # call-seq:
     #   easy.sym2curl :symbol => Fixnum
     #
     #  translates ruby symbols to libcurl options
     #
-    def sym2curl(opt)
-      Curl.const_get("CURLOPT_#{opt.to_s.upcase}")
+    def sym2curl(opt)      
+      #Curl.const_get("CURLOPT_#{opt.to_s.upcase}")
+      p "sym2curl: #{opt.inspect} -> #{Core::OPTION[opt.to_s.upcase.intern]}"
+      Core::OPTION[opt.to_s.upcase.intern]    # TODO inefficiency with all the upcasing and the interning...
     end
 
     #
@@ -68,7 +477,11 @@ module Curl
       ret = self.multi.perform
       self.multi.remove self
 
-      if self.last_result != 0 && self.on_failure.nil?
+      # Curb API stipulates empty header when no headers received, 
+      # so ensure that.
+      @header_str ||= ""
+
+      if self.last_result_code != :e_ok && self.on_failure.nil?
         error = Curl::Easy.error(self.last_result)
         raise error.first.new(error.last)
       end
@@ -119,7 +532,7 @@ module Curl
     # the URL between calls to +perform+.
     #
     def url=(u)
-      set :url, u
+      @url = u
     end
 
     #
@@ -148,14 +561,18 @@ module Curl
     # proxy_url, including protocol prefix (http://) and embedded user + password.
     #
     def proxy_url=(url)
-      set :proxy, url
+      @proxy_url = url
     end
 
     def ssl_verify_host=(value)
       value = 1 if value.class == TrueClass
       value = 0 if value.class == FalseClass
-      self.ssl_verify_host_integer=value
+      @ssl_verify_host_integer=value
     end
+
+    def ssl_verify_host
+      @ssl_verify_host_integer
+    end    
 
     #
     # call-seq:
@@ -264,7 +681,11 @@ module Curl
     # specified by +max_redirects+.
     #
     def follow_location=(onoff)
-      set :followlocation, onoff
+      @follow_location = (onoff ? true : false)
+    end
+
+    def follow_location?
+      @follow_location
     end
 
     #
@@ -309,6 +730,46 @@ module Curl
       self.http :DELETE
     end
     alias delete http_delete
+
+    def http(verb)
+      Core.easy_setopt(handle, :CUSTOMREQUEST, verb.to_s)
+      begin
+        return self.perform
+      ensure
+        Core.easy_setopt(handle, :CUSTOMREQUEST, nil)
+      end
+    end
+
+    #
+    # call-seq:
+    #   easy.http_put(url, data) {|c| ... }
+    #
+    # see easy.http_put
+    #
+    def http_put(data)
+    end
+
+    #
+    # call-seq:
+    #   easy.http_post(url, "some=urlencoded%20form%20data&and=so%20on") => true
+    #   easy.http_post(url, "some=urlencoded%20form%20data", "and=so%20on", ...) => true
+    #   easy.http_post(url, "some=urlencoded%20form%20data", Curl::PostField, "and=so%20on", ...) => true
+    #   easy.http_post(url, Curl::PostField, Curl::PostField ..., Curl::PostField) => true
+    #
+    # POST the specified formdata to the currently configured URL using
+    # the current options set for this Curl::Easy instance. This method
+    # always returns true, or raises an exception (defined under
+    # Curl::Err) on error.
+    #
+    # If you wish to use multipart form encoding, you'll need to supply a block
+    # in order to set ignore_content_length true. See #http_post for more
+    # information.
+    #
+    def http_post(*args)
+    end      
+    
+    alias post http_post
+    alias put http_put
 
     class << self
 
@@ -390,7 +851,7 @@ module Curl
       # Curl::Err) on error.
       #
       # If you wish to use multipart form encoding, you'll need to supply a block
-      # in order to set multipart_form_post true. See #http_post for more
+      # in order to set ignore_content_length true. See #http_post for more
       # information.
       #
       def http_post(*args)

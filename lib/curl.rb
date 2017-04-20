@@ -1,4 +1,4 @@
-require 'curb_core'
+require 'curl/curb_core_ffi'
 require 'curl/easy'
 require 'curl/multi'
 require 'uri'
@@ -6,7 +6,15 @@ require 'cgi'
 
 # expose shortcut methods
 module Curl
-  
+
+  # These should be managed from the Rake 'release' task.
+  CURB_VERSION    = "2.0.1.7"
+  CURB_VER_NUM    = 2017
+  CURB_VER_MAJ    = 2
+  CURB_VER_MIN    = 0
+  CURB_VER_MIC    = 1
+  CURB_VER_PATCH  = 7
+      
   def self.http(verb, url, post_body=nil, put_data=nil, &block)
     handle = Thread.current[:curb_curl] ||= Curl::Easy.new
     handle.reset

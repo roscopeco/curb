@@ -8,12 +8,8 @@ rescue LoadError => e
   require 'rake/rdoctask'
 end
 
-CLEAN.include '**/*.o'
-CLEAN.include "**/*.#{(defined?(RbConfig) ? RbConfig : Config)::MAKEFILE_CONFIG['DLEXT']}"
 CLOBBER.include 'doc'
 CLOBBER.include '**/*.log'
-CLOBBER.include '**/Makefile'
-CLOBBER.include '**/extconf.h'
 
 def announce(msg='')
   $stderr.puts msg
@@ -23,7 +19,7 @@ desc "Default Task (Test project)"
 task :default => :test
 
 # Determine the current version of the software
-if File.read('ext/curb.h') =~ /\s*CURB_VERSION\s*['"](\d.+)['"]/
+if File.read('lib/curb.rb') =~ /\s*CURB_VERSION\s*=\s*['"](\d.+)['"]/
   CURRENT_VERSION = $1
 else
   CURRENT_VERSION = "0.0.0"
@@ -37,41 +33,6 @@ end
 
 task :test_ver do
   puts PKG_VERSION
-end
-
-# Make tasks -----------------------------------------------------
-make_program = (/mswin/ =~ RUBY_PLATFORM) ? 'nmake' : 'make'
-MAKECMD = ENV['MAKE_CMD'] || make_program
-MAKEOPTS = ENV['MAKE_OPTS'] || ''
-
-CURB_SO = "ext/curb_core.#{(defined?(RbConfig) ? RbConfig : Config)::MAKEFILE_CONFIG['DLEXT']}"
-
-file 'ext/Makefile' => 'ext/extconf.rb' do
-  Dir.chdir('ext') do
-    ruby "extconf.rb #{ENV['EXTCONF_OPTS']}"
-  end
-end
-
-def make(target = '')
-  Dir.chdir('ext') do 
-    pid = system("#{MAKECMD} #{MAKEOPTS} #{target}")
-    $?.exitstatus
-  end    
-end
-
-# Let make handle dependencies between c/o/so - we'll just run it. 
-file CURB_SO => (['ext/Makefile'] + Dir['ext/*.c'] + Dir['ext/*.h']) do
-  m = make
-  fail "Make failed (status #{m})" unless m == 0
-end
-
-desc "Compile the shared object"
-task :compile => [CURB_SO]
-
-desc "Install to your site_ruby directory"
-task :install do
-  m = make 'install' 
-  fail "Make install failed (status #{m})" unless m == 0
 end
 
 # Test Tasks ---------------------------------------------------------
@@ -106,8 +67,8 @@ end
   #t.warning = true
 #end
 
-task :unittests => :compile
-task :bugtests => :compile
+task :unittests
+task :bugtests
 
 def has_gem?(file,name)
   begin
