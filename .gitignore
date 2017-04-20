@@ -10,3 +10,4 @@ ext/curb_upload.o
 ext/curb_config.h
 pkg/
 ext/mkmf.log
+scratch.rb
