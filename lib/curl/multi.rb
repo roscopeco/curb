@@ -341,7 +341,7 @@ module Curl
     end
 
     def remove(*args)
-    end
+    end    
 
     # The underlying FFI handle to the multi. Leave this alone.
     # It would be private but easy needs it right now...
@@ -357,6 +357,7 @@ module Curl
     end        
 
     private
+
     # Get timeout.
     #
     # @example Get timeout.
@@ -448,9 +449,8 @@ module Curl
         break if msg.null?
         next if msg[:code] != :done
         easy = easies.find { |e| e.handle == msg[:easy_handle] }
-        easy.last_result_code = msg[:data][:multi_code]
         delete(easy)
-        easy.complete
+        easy.instance_eval { handle_easy_completed(msg[:data][:multi_code]) }
       end
     end
 

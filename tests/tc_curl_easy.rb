@@ -623,6 +623,7 @@ class TestCurbCurlEasy < Test::Unit::TestCase
     curl.on_success {|c| } # make sure we get the failure call even though this handler is defined
     curl.on_failure {|c,code| on_failure_called = true }
     curl.perform
+    assert_equal :e_ok, curl.last_result_code
     assert_equal 500, curl.response_code
     assert on_failure_called, "Failure handler not called" 
   end

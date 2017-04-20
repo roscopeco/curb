@@ -68,44 +68,94 @@ module Curl
       old      
     end
     
-    def on_success(&handler)
-      old, @on_success = @on_success, handler
-      old      
-    end
-
-    def on_redirect(&handler)
-      old, @on_redirect = @on_redirect, handler
-      old      
-    end
-
-    def on_missing(&handler)
-      old, @on_missing = @on_missing, handler
-      old      
-    end    
-    
-    def on_failure(&handler)
-      old, @on_failure = @on_failure, handler
-      old      
-    end
-
+    # call-seq:
+    #   easy.on_complete {|easy| ... }                   => &lt;old handler&gt;
+    #
+    # Assign or remove the +on_complete+ handler for this Curl::Easy instance.
+    # To remove a previously-supplied handler, call this method with no
+    # attached block.
+    #
+    # The +on_complete+ handler is called when the request is finished.
     def on_complete(&handler)
       old, @on_complete = @on_complete, handler
       old      
     end
 
+     # call-seq:
+     #   easy.on_success { |easy| ... }                   => &lt;old handler&gt;
+     #
+     # Assign or remove the +on_success+ handler for this Curl::Easy instance.
+     # To remove a previously-supplied handler, call this method with no
+     # attached block.
+     #
+     # The +on_success+ handler is called when the request is finished with a
+     # status of 20x
+     def on_success(&handler)
+      old, @on_success = @on_success, handler
+      old      
+    end
+
+    # call-seq:
+    #   easy.on_failure {|easy,code| ... }               => &lt;old handler&gt;
+    #
+    # Assign or remove the +on_failure+ handler for this Curl::Easy instance.
+    # To remove a previously-supplied handler, call this method with no
+    # attached block.
+    #
+    # The +on_failure+ handler is called when the request is finished with a
+    # status of 50x
+    def on_failure(&handler)
+      old, @on_failure = @on_failure, handler
+      old      
+    end
+
+    # call-seq:
+    #  easy.on_missing {|easy,code| ... }                => &lt;old handler;&gt;
+    #
+    #  Assign or remove the on_missing handler for this Curl::Easy instance.
+    #  To remove a previously-supplied handler, call this method with no attached
+    #  block.
+    #
+    #  The +on_missing+ handler is called when request is finished with a 
+    #  status of 40x
+    def on_missing(&handler)
+      old, @on_missing = @on_missing, handler
+      old      
+    end    
+
+    # call-seq:
+    #  easy.on_redirect {|easy,code| ... }                => &lt;old handler;&gt;
+    #
+    #  Assign or remove the on_redirect handler for this Curl::Easy instance.
+    #  To remove a previously-supplied handler, call this method with no attached
+    #  block.
+    #
+    #  The +on_redirect+ handler is called when request is finished with a 
+    #  status of 30x
+    def on_redirect(&handler)
+      old, @on_redirect = @on_redirect, handler
+      old      
+    end
+
+    # call-seq:
+    #   easy.on_debug { |type, data| ... }               => &lt;old handler&gt;
+    #
+    # Assign or remove the +on_debug+ handler for this Curl::Easy instance.
+    # To remove a previously-supplied handler, call this method with no
+    # attached block.
+    #
+    # The +on_debug+ handler, if configured, will receive detailed information
+    # from libcurl during the perform call. This can be useful for debugging.
+    # Setting a debug handler overrides libcurl's internal handler, disabling
+    # any output from +verbose+, if set.
+    #
+    # The type argument will match one of the Curl::Easy::CURLINFO_XXXX
+    # constants, and specifies the kind of information contained in the
+    # data. The data is passed as a String.
     def on_debug(&handler)
       old, @on_debug = @on_debug, handler
       old      
     end
-
-    def url(*args)
-      @url
-    end    
-
-    def complete
-      # maybe run on_complete? I think Curl does that...
-      # Don't think this is needed, it came over from Ethon...
-    end    
 
     attr_accessor :username
     attr_accessor :password
@@ -191,9 +241,11 @@ module Curl
       @proxy_url
     end
 
-    # The last result code (a symbol)    
-    attr_accessor :last_result_code
-
+    # The last Curl result code (a symbol)
+    def last_result_code
+      @last_result_code
+    end
+    
     # Last result as a numeric - API compatible
     def last_result
       Core.sym2num(last_result_code)
@@ -274,7 +326,7 @@ module Curl
 
     def response_code
       ptr = Core::IntPtr.new
-      Core.easy_getinfo(handle, :RESPONSE_CODE, ptr)
+      res = Core.easy_getinfo(handle, :RESPONSE_CODE, ptr)
       ptr[:value]
     end  
 
@@ -372,53 +424,6 @@ module Curl
       # TODO The metric fuck-ton of other setup that needs doing...
     end
 
-    #################### CALLBACK IMPLEMENTATIONS ############################
-    private
-    # Note: these MUST return a Numeric, or "hilarity" will ensue. FFI uses NUM2LL to convert
-    # the return value, so if you get weird TypeErrors with an incomplete stack trace, check 
-    # this first.
-    #
-    # Curl expects the return to be size * n, anything else signals a write error.
-    #
-    # Originally the idea was to pass through the proc in WRITEDATA and retrieve
-    # it here, but that could cause problems if the proc gets GC'd (or moved e.g. on JRuby)
-    # so now we don't do that...
-
-    # Passed to Curl to handle body data.
-    def body_callback(str, size, n, ignored)
-      if (@on_body)
-        @on_body.call(str)
-      else
-        (@body_str ||= "") << str
-      end
-      size * n
-    end     
-
-    # Passed to Curl to handle header data.
-    def header_callback(str, size, n, ignored)
-      if (@on_header)
-        @on_header.call(str)
-      else
-        (@header_str ||= "") << str
-      end
-      size * n
-    end
-
-    def progress_callback(ignored, dltotal, dlnow, ultotal, ulnow)
-      ret = 0
-      if (@on_progress)
-        begin
-          @on_progress.call([dltotal, dlnow, ultotal, ulnow])
-        rescue => exception
-          ret = -1
-        end        
-      end  
-      ret    
-    end    
-
-    public
-    ################## END CALLBACK IMPLEMENTATIONS ##########################
-
     alias body body_str
     alias head header_str
     
@@ -477,16 +482,12 @@ module Curl
       ret = self.multi.perform
       self.multi.remove self
 
-      # Curb API stipulates empty header when no headers received, 
-      # so ensure that.
-      @header_str ||= ""
-
       if self.last_result_code != :e_ok && self.on_failure.nil?
         error = Curl::Easy.error(self.last_result)
         raise error.first.new(error.last)
       end
 
-      ret
+      true
     end
 
     #
@@ -521,6 +522,14 @@ module Curl
     #
     def version=(http_version)
       set :http_version, http_version
+    end
+
+    # call-seq:
+    #   easy.url                                         => string
+    #
+    # Obtain the URL that will be used by subsequent calls to +perform+.
+    def url
+      @url
     end
 
     #
@@ -771,6 +780,14 @@ module Curl
     alias post http_post
     alias put http_put
 
+    def inspect
+      if url
+        "#<Curl::Easy #{url[0..63]}>"
+      else        
+        "#<Curl::Easy>"
+      end
+    end
+
     class << self
 
       #
@@ -926,18 +943,93 @@ module Curl
     # but be careful to not use a colon from a windows file path
     # as the split point. Mimic what curl's main does
     if respond_to?(:cert=)
-    alias_method :native_cert=, :cert=
-    def cert=(cert_file)
-      pos = cert_file.rindex(':')
-      if pos && pos > 1
-        self.native_cert= cert_file[0..pos-1]
-        self.certpassword= cert_file[pos+1..-1]
-      else
-        self.native_cert= cert_file
+      alias_method :native_cert=, :cert=
+      def cert=(cert_file)
+        pos = cert_file.rindex(':')
+        if pos && pos > 1
+          self.native_cert= cert_file[0..pos-1]
+          self.certpassword= cert_file[pos+1..-1]
+        else
+          self.native_cert= cert_file
+        end
+        self.cert
       end
-      self.cert
     end
+
+
+    ################################## PRIVATE ###########################################    
+    private
+
+    def last_result_code=(code)
+      @last_result_code = code
     end
+
+    #################### CALLBACK IMPLEMENTATIONS ############################
+    # Note: these MUST return a Numeric, or "hilarity" will ensue. FFI uses NUM2LL to convert
+    # the return value, so if you get weird TypeErrors with an incomplete stack trace, check 
+    # this first.
+    #
+    # Curl expects the return to be size * n, anything else signals a write error.
+    #
+    # Originally the idea was to pass through the proc in WRITEDATA and retrieve
+    # it here, but that could cause problems if the proc gets GC'd (or moved e.g. on JRuby)
+    # so now we don't do that...
+
+    # Passed to Curl to handle body data.
+    def body_callback(str, size, n, ignored)
+      if (@on_body)
+        @on_body.call(str)
+      else
+        (@body_str ||= "") << str
+      end
+      size * n
+    end     
+
+    # Passed to Curl to handle header data.
+    def header_callback(str, size, n, ignored)
+      if (@on_header)
+        @on_header.call(str)
+      else
+        (@header_str ||= "") << str
+      end
+      size * n
+    end
+
+    def progress_callback(ignored, dltotal, dlnow, ultotal, ulnow)
+      ret = 0
+      if (@on_progress)
+        begin
+          @on_progress.call([dltotal, dlnow, ultotal, ulnow])
+        rescue => exception
+          ret = -1
+        end        
+      end  
+      ret    
+    end    
+
+    public
+    ################## END CALLBACK IMPLEMENTATIONS ##########################
+
+    # Multi calls this when we're done, and it handles calling the handler procs...
+    def handle_easy_completed(curl_result)
+      code, ex = self.response_code, nil
+      self.last_result_code = curl_result
+
+      # Curb API stipulates empty header when no headers received, 
+      # or (I think) if we've handled them with a handler, so ensure that.
+      @header_str ||= ""
+
+      begin; @on_complete.call(self)         if @on_complete                                ; rescue => ex; end;
+      begin; @on_failure.call(self, code)    if @on_failure    && curl_result != 0          ; rescue => ex; end; 
+      begin; @on_redirect.call(self, code)   if @on_redirect   && code > 300 && code < 400  ; rescue => ex; end;
+      begin; @on_missing.call(self, code)    if @on_missing    && code > 400 && code < 500  ; rescue => ex; end;
+      begin; @on_failure.call(self, code)    if @on_failure    && code > 500 && code <= 999 ; rescue => ex; end;
+      begin
+        @on_success.call(self) if @on_success && ((code > 200 && code < 300) || code == 0)  
+      rescue => ex; end
+
+      warn "Uncaught exception from callback" if ex
+    end    
 
   end
 end

@@ -1383,6 +1383,7 @@ module Curl
     OPTION_FUNCTIONPOINT = 20000
     OPTION_OFF_T         = 30000
 
+    # TODO downcase these, so they fit with the existing options...
     OPTION = enum :option, [
       # This is the FILE* or void* the regular output should be written to.
       :WRITEDATA, OPTION_OBJECTPOINT + 1,
