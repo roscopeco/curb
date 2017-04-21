@@ -710,7 +710,7 @@ module Curl
     #   easy.cookiejar                                   => string
     #
     # Obtain the cookiejar file to use for this Curl::Easy instance.
-    def cookie_jar
+    def cookiejar
       @cookiejar
     end
 
@@ -845,7 +845,7 @@ module Curl
 
     def inspect
       if url
-        "#<Curl::Easy #{url[0..63]}>"
+        "#<Curl::Easy #{url[0..49]}>"
       else        
         "#<Curl::Easy>"
       end
