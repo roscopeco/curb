@@ -311,8 +311,23 @@ module Curl
       @header_in_body
     end
 
-    attr_reader :last_effective_url
+    def last_effective_url
+      ptr = Core::OutPtr.new
+      Core.easy_getinfo(handle, :effective_url,  ptr)
 
+      # make a pointer from the out-int, get string, and dup to be safe.
+      # The memory stays around until curl_easy_cleanup is called, butif the
+      # string lasts longer there'll be a segfault at some random time later...
+      #
+      # This also isn't thread safe but I think it'd be a pretty pathological      
+      # case that broke it. Still, I guess we'll see...
+      #
+      # nil return is intentional, btw!
+      if !(s = ptr.to_pointer.read_string).empty?
+        s.dup.force_encoding(__ENCODING__)
+      end      
+    end
+    
     attr_accessor :timeout, :timeout_ms
     attr_accessor :connect_timeout, :connect_timeout_ms
     attr_accessor :dns_cache_timeout
@@ -325,9 +340,9 @@ module Curl
     attr_accessor :cert_key
 
     def response_code
-      ptr = Core::IntPtr.new
+      ptr = Core::OutPtr.new
       res = Core.easy_getinfo(handle, :response_code, ptr)
-      ptr[:value]
+      ptr.to_i
     end  
 
     # The underlying FFI handle to the multi. Leave this alone.
@@ -462,7 +477,7 @@ module Curl
 
       begin
         Core.easy_setopt(handle, optsym, val)
-      rescue TypeError => x
+      rescue TypeError
         raise TypeError, "Curb doesn't support setting #{optsym} [##{opt}] option"
       end
     end

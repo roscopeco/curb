@@ -49,9 +49,19 @@ module Curl
       end    
     end    
 
-    # Some types we use here and there
-    class IntPtr < FFI::Struct
+    ############ Some types we use here and there
+    class OutPtr < FFI::Struct
       layout  :value, :int
+      
+      # Get value that as an int (e.g. for an int* out).
+      def to_i
+        self[:value]
+      end
+      
+      # Convert to a pointer (e.g. for a char* out)
+      def to_pointer
+        FFI::Pointer.new(self[:value])
+      end      
     end
         
     # THIS CODE COMES FROM https://github.com/arthurschreiber/curl-ffi/blob/master/lib/curl/curl.rb
@@ -2928,7 +2938,7 @@ module Curl
       #option = OPTION[option] if option.is_a?(Symbol)
       if option.is_a?(Symbol)        
         option, was = OPTION[option], option
-        raise Err::CurlError.new("[BUG] Invalid CURLOPT " + was.inspect) if option.nil?
+        raise Err::CurlError.new("Invalid cURL option: '" + was.inspect) if option.nil?
       end
 
       if option >= OPTION_OFF_T
@@ -2942,6 +2952,10 @@ module Curl
           self.easy_setopt_pointer(handle, option, value)
         end
       elsif option >= OPTION_LONG
+        if value.is_a?(TrueClass) || value.is_a?(FalseClass)
+          value = value ? 1 : 0
+        end
+
         self.easy_setopt_long(handle, option, value)
       end
     end
@@ -2979,7 +2993,7 @@ module Curl
     # @param [Symbol from _enum_info_] info 
     # @return [Symbol from _enum_code_] 
     # @scope class
-    attach_function :easy_getinfo, :curl_easy_getinfo, [:pointer, :info, IntPtr], :code
+    attach_function :easy_getinfo, :curl_easy_getinfo, [:pointer, :info, OutPtr], :code
     
     # NAME curl_easy_duphandle()
     # 
