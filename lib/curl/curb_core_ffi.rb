@@ -1377,52 +1377,50 @@ module Curl
       :last, 4
     ]
 
-    # THIS CODE COMES FROM https://github.com/arthurschreiber/curl-ffi/blob/master/lib/curl/curl.rb  
     OPTION_LONG          = 0
     OPTION_OBJECTPOINT   = 10000
     OPTION_FUNCTIONPOINT = 20000
     OPTION_OFF_T         = 30000
 
-    # TODO downcase these, so they fit with the existing options...
     OPTION = enum :option, [
       # This is the FILE* or void* the regular output should be written to.
-      :WRITEDATA, OPTION_OBJECTPOINT + 1,
+      :writedata, OPTION_OBJECTPOINT + 1,
 
       # The full URL to get/put
-      :URL,  OPTION_OBJECTPOINT + 2,
+      :url,  OPTION_OBJECTPOINT + 2,
 
       # Port number to connect to, if other than default.
-      :PORT, OPTION_LONG + 3,
+      :port, OPTION_LONG + 3,
 
       # Name of proxy to use.
-      :PROXY, OPTION_OBJECTPOINT + 4,
+      :proxy, OPTION_OBJECTPOINT + 4,
 
       # "name:password" to use when fetching.
-      :USERPWD, OPTION_OBJECTPOINT + 5,
+      :userpwd, OPTION_OBJECTPOINT + 5,
 
       # "name:password" to use with proxy.
-      :PROXYUSERPWD, OPTION_OBJECTPOINT + 6,
+      :proxyuserpwd, OPTION_OBJECTPOINT + 6,
 
       # Range to get, specified as an ASCII string.
-      :RANGE, OPTION_OBJECTPOINT + 7,
+      :range, OPTION_OBJECTPOINT + 7,
 
       # Specified file stream to upload from (use as input):
-      :INFILE, OPTION_OBJECTPOINT + 9,
+      :infile, OPTION_OBJECTPOINT + 9,
 
       # Buffer to receive error messages in, must be at least CURL_ERROR_SIZE
       # bytes big. If this is not used, error messages go to stderr instead:
-      :ERRORBUFFER, OPTION_OBJECTPOINT + 10,
+      :errorbuffer, OPTION_OBJECTPOINT + 10,
 
       # Function that will be called to store the output (instead of fwrite). The
       # parameters will use fwrite() syntax, make sure to follow them.
-      :WRITEFUNCTION, OPTION_FUNCTIONPOINT + 11,
+      :writefunction, OPTION_FUNCTIONPOINT + 11,
 
       # Function that will be called to read the input (instead of fread). The
       # parameters will use fread() syntax, make sure to follow them.
-      :READFUNCTION, OPTION_FUNCTIONPOINT + 12,
+      :readfunction, OPTION_FUNCTIONPOINT + 12,
 
       # Time-out the read operation after this amount of seconds
-      :TIMEOUT, OPTION_LONG + 13,
+      :timeout, OPTION_LONG + 13,
 
       # If the CURLOPT_INFILE is used, this can be used to inform libcurl about
       # how large the file being sent really is. That allows better error
@@ -1432,20 +1430,20 @@ module Curl
       # For large file support, there is also a _LARGE version of the key
       # which takes an off_t type, allowing platforms with larger off_t
       # sizes to handle larger files.  See below for INFILESIZE_LARGE.
-      :INFILESIZE, OPTION_LONG + 14,
+      :infilesize, OPTION_LONG + 14,
 
       # POST static input fields.
-      :POSTFIELDS, OPTION_OBJECTPOINT + 15,
+      :postfields, OPTION_OBJECTPOINT + 15,
 
       # Set the referrer page (needed by some CGIs)
-      :REFERER, OPTION_OBJECTPOINT + 16,
+      :referer, OPTION_OBJECTPOINT + 16,
 
       # Set the FTP PORT string (interface name, named or numerical IP address)
       #   Use i.e '-' to use default address.
-      :FTPPORT, OPTION_OBJECTPOINT + 17,
+      :ftpport, OPTION_OBJECTPOINT + 17,
 
       # Set the User-Agent string (examined by some CGIs)
-      :USERAGENT, OPTION_OBJECTPOINT + 18,
+      :useragent, OPTION_OBJECTPOINT + 18,
 
       # If the download receives less than "low speed limit" bytes/second
       # during "low speed time" seconds, the operations is aborted.
@@ -1453,346 +1451,346 @@ module Curl
       # it is less than 2000 bytes/sec during 20 seconds.
 
       # Set the "low speed limit"
-      :LOW_SPEED_LIMIT, OPTION_LONG + 19,
+      :low_speed_limit, OPTION_LONG + 19,
 
       # Set the "low speed time"
-      :LOW_SPEED_TIME, OPTION_LONG + 20,
+      :low_speed_time, OPTION_LONG + 20,
 
       # Set the continuation offset.
       #
       # Note there is also a _LARGE version of this key which uses
       # off_t types, allowing for large file offsets on platforms which
       # use larger-than-32-bit off_t's.  Look below for RESUME_FROM_LARGE.
-      :RESUME_FROM, OPTION_LONG + 21,
+      :resume_from, OPTION_LONG + 21,
 
       # Set cookie in request:
-      :COOKIE, OPTION_OBJECTPOINT + 22,
+      :cookie, OPTION_OBJECTPOINT + 22,
 
       # This points to a linked list of headers, struct curl_slist kind
-      :HTTPHEADER, OPTION_OBJECTPOINT + 23,
+      :httpheader, OPTION_OBJECTPOINT + 23,
 
       # This points to a linked list of post entries, struct curl_httppost
-      :HTTPPOST, OPTION_OBJECTPOINT + 24,
+      :httppost, OPTION_OBJECTPOINT + 24,
 
       # name of the file keeping your private SSL-certificate
-      :SSLCERT, OPTION_OBJECTPOINT + 25,
+      :sslcert, OPTION_OBJECTPOINT + 25,
 
       # password for the SSL or SSH private key
-      :KEYPASSWD, OPTION_OBJECTPOINT + 26,
+      :keypasswd, OPTION_OBJECTPOINT + 26,
 
       # send TYPE parameter?
-      :CRLF, OPTION_LONG + 27,
+      :crlf, OPTION_LONG + 27,
 
       # send linked-list of QUOTE commands
-      :QUOTE, OPTION_OBJECTPOINT + 28,
+      :quote, OPTION_OBJECTPOINT + 28,
 
       # send FILE# or void# to store headers to, if you use a callback it
       #   is simply passed to the callback unmodified
-      :WRITEHEADER, OPTION_OBJECTPOINT + 29,
+      :writeheader, OPTION_OBJECTPOINT + 29,
 
       # point to a file to read the initial cookies from, also enables
       #   "cookie awareness"
-      :COOKIEFILE, OPTION_OBJECTPOINT + 31,
+      :cookiefile, OPTION_OBJECTPOINT + 31,
 
       # What version to specifically try to use.
       #   See CURL_SSLVERSION defines below.
-      :SSLVERSION, OPTION_LONG + 32,
+      :sslversion, OPTION_LONG + 32,
 
       # What kind of HTTP time condition to use, see defines
-      :TIMECONDITION, OPTION_LONG + 33,
+      :timecondition, OPTION_LONG + 33,
 
       # Time to use with the above condition. Specified in number of seconds
       #   since 1 Jan 1970
-      :TIMEVALUE, OPTION_LONG + 34,
+      :timevalue, OPTION_LONG + 34,
 
       # Custom request, for customizing the get command like
       #   HTTP: DELETE, TRACE and others
       #   FTP: to use a different list command
-      :CUSTOMREQUEST, OPTION_OBJECTPOINT + 36,
+      :customrequest, OPTION_OBJECTPOINT + 36,
 
       # HTTP request, for odd commands like DELETE, TRACE and others
-      :STDERR, OPTION_OBJECTPOINT + 37,
+      :stderr, OPTION_OBJECTPOINT + 37,
 
       # send linked-list of post-transfer QUOTE commands
-      :POSTQUOTE, OPTION_OBJECTPOINT + 39,
+      :postquote, OPTION_OBJECTPOINT + 39,
 
       # Pass a pointer to string of the output using full variable-replacement
       #   as described elsewhere.
-      :WRITEINFO, OPTION_OBJECTPOINT + 40,
+      :writeinfo, OPTION_OBJECTPOINT + 40,
 
-      :VERBOSE, OPTION_LONG + 41,      # talk a lot
-      :HEADER, OPTION_LONG + 42,       # throw the header out too
-      :NOPROGRESS, OPTION_LONG + 43,   # shut off the progress meter
-      :NOBODY, OPTION_LONG + 44,       # use HEAD to get http document
-      :FAILONERROR, OPTION_LONG + 45,  # no output on http error codes >= 300
-      :UPLOAD, OPTION_LONG + 46,       # this is an upload
-      :POST, OPTION_LONG + 47,         # HTTP POST method
-      :DIRLISTONLY, OPTION_LONG + 48,  # return bare names when listing directories
+      :verbose, OPTION_LONG + 41,      # talk a lot
+      :header, OPTION_LONG + 42,       # throw the header out too
+      :noprogress, OPTION_LONG + 43,   # shut off the progress meter
+      :nobody, OPTION_LONG + 44,       # use HEAD to get http document
+      :failonerror, OPTION_LONG + 45,  # no output on http error codes >= 300
+      :upload, OPTION_LONG + 46,       # this is an upload
+      :post, OPTION_LONG + 47,         # HTTP POST method
+      :dirlistonly, OPTION_LONG + 48,  # return bare names when listing directories
 
-      :APPEND, OPTION_LONG + 50,       # Append instead of overwrite on upload!
+      :append, OPTION_LONG + 50,       # Append instead of overwrite on upload!
 
       # Specify whether to read the user+password from the .netrc or the URL.
       # This must be one of the CURL_NETRC_* enums below.
-      :NETRC, OPTION_LONG + 51,
+      :netrc, OPTION_LONG + 51,
 
-      :FOLLOWLOCATION, OPTION_LONG + 52,  # use Location: Luke!
+      :followlocation, OPTION_LONG + 52,  # use Location: Luke!
 
-      :TRANSFERTEXT, OPTION_LONG + 53, # transfer data in text/ASCII format
-      :PUT, OPTION_LONG + 54,          # HTTP PUT
+      :transfertext, OPTION_LONG + 53, # transfer data in text/ASCII format
+      :put, OPTION_LONG + 54,          # HTTP PUT
 
       # 55 = OBSOLETE
 
       # Function that will be called instead of the internal progress display
       # function. This function should be defined as the curl_progress_callback
       # prototype defines.
-      :PROGRESSFUNCTION, OPTION_FUNCTIONPOINT + 56,
+      :progressfunction, OPTION_FUNCTIONPOINT + 56,
 
       # Data passed to the progress callback
-      :PROGRESSDATA, OPTION_OBJECTPOINT + 57,
+      :progressdata, OPTION_OBJECTPOINT + 57,
 
       # We want the referrer field set automatically when following locations
-      :AUTOREFERER, OPTION_LONG + 58,
+      :autoreferer, OPTION_LONG + 58,
 
       # Port of the proxy, can be set in the proxy string as well with:
       #   "[host]:[port]"
-      :PROXYPORT, OPTION_LONG + 59,
+      :proxyport, OPTION_LONG + 59,
 
       # size of the POST input data, if strlen() is not good to use
-      :POSTFIELDSIZE, OPTION_LONG + 60,
+      :postfieldsize, OPTION_LONG + 60,
 
       # tunnel non-http operations through a HTTP proxy
-      :HTTPPROXYTUNNEL, OPTION_LONG + 61,
+      :httpproxytunnel, OPTION_LONG + 61,
 
       # Set the interface string to use as outgoing network interface
-      :INTERFACE, OPTION_OBJECTPOINT + 62,
+      :interface, OPTION_OBJECTPOINT + 62,
 
       # Set the krb4/5 security level, this also enables krb4/5 awareness.  This
       # is a string, 'clear', 'safe', 'confidential' or 'private'.  If the string
       # is set but doesn't match one of these, 'private' will be used.
-      :KRBLEVEL, OPTION_OBJECTPOINT + 63,
+      :krblevel, OPTION_OBJECTPOINT + 63,
 
       # Set if we should verify the peer in ssl handshake, set 1 to verify.
-      :SSL_VERIFYPEER, OPTION_LONG + 64,
+      :ssl_verifypeer, OPTION_LONG + 64,
 
       # The CApath or CAfile used to validate the peer certificate
       #   this option is used only if SSL_VERIFYPEER is true
-      :CAINFO, OPTION_OBJECTPOINT + 65,
+      :cainfo, OPTION_OBJECTPOINT + 65,
 
       # Maximum number of http redirects to follow
-      :MAXREDIRS, OPTION_LONG + 68,
+      :maxredirs, OPTION_LONG + 68,
 
       # Pass a OPTION_long set to 1 to get the date of the requested document (if
       #   possible)! Pass a zero to shut it off.
-      :FILETIME, OPTION_LONG + 69,
+      :filetime, OPTION_LONG + 69,
 
       # This points to a linked list of telnet options
-      :TELNETOPTIONS, OPTION_OBJECTPOINT + 70,
+      :telnetoptions, OPTION_OBJECTPOINT + 70,
 
       # Max amount of cached alive connections
-      :MAXCONNECTS, OPTION_LONG + 71,
+      :maxconnects, OPTION_LONG + 71,
 
       # What policy to use when closing connections when the cache is filled up
-      :CLOSEPOLICY, OPTION_LONG + 72,
+      :closepolicy, OPTION_LONG + 72,
 
       # Set to explicitly use a new connection for the upcoming transfer.
       #   Do not use this unless you're absolutely sure of this, as it makes the
       #   operation slower and is less friendly for the network.
-      :FRESH_CONNECT, OPTION_LONG + 74,
+      :fresh_connect, OPTION_LONG + 74,
 
       # Set to explicitly forbid the upcoming transfer's connection to be re-used
       #   when done. Do not use this unless you're absolutely sure of this, as it
       #   makes the operation slower and is less friendly for the network.
-      :FORBID_REUSE, OPTION_LONG + 75,
+      :forbid_reuse, OPTION_LONG + 75,
 
       # Set to a file name that contains random data for libcurl to use to
       #   seed the random engine when doing SSL connects.
-      :RANDOM_FILE, OPTION_OBJECTPOINT + 76,
+      :random_file, OPTION_OBJECTPOINT + 76,
 
       # Set to the Entropy Gathering Daemon socket pathname
-      :EGDSOCKET, OPTION_OBJECTPOINT + 77,
+      :egdsocket, OPTION_OBJECTPOINT + 77,
 
       # Time-out connect operations after this amount of seconds, if connects
       #   are OK within this time, then fine... This only aborts the connect
       #   phase. [Only works on unix-style/SIGALRM operating systems]
-      :CONNECTTIMEOUT, OPTION_LONG + 78,
+      :connecttimeout, OPTION_LONG + 78,
 
       # Function that will be called to store headers (instead of fwrite). The
       # parameters will use fwrite() syntax, make sure to follow them.
-      :HEADERFUNCTION, OPTION_FUNCTIONPOINT + 79,
+      :headerfunction, OPTION_FUNCTIONPOINT + 79,
 
       # Set this to force the HTTP request to get back to GET. Only really usable
       #   if POST, PUT or a custom request have been used first.
-      :HTTPGET, OPTION_LONG + 80,
+      :httpget, OPTION_LONG + 80,
 
       # Set if we should verify the Common name from the peer certificate in ssl
       # handshake, set 1 to check existence, 2 to ensure that it matches the
       # provided hostname.
-      :SSL_VERIFYHOST, OPTION_LONG + 81,
+      :ssl_verifyhost, OPTION_LONG + 81,
 
       # Specify which file name to write all known cookies in after completed
       #   operation. Set file name to "-" (dash) to make it go to stdout.
-      :COOKIEJAR, OPTION_OBJECTPOINT + 82,
+      :cookiejar, OPTION_OBJECTPOINT + 82,
 
       # Specify which SSL ciphers to use
-      :SSL_CIPHER_LIST, OPTION_OBJECTPOINT + 83,
+      :ssl_cipher_list, OPTION_OBJECTPOINT + 83,
 
       # Specify which HTTP version to use! This must be set to one of the
       #   CURL_HTTP_VERSION* enums set below.
-      :HTTP_VERSION, OPTION_LONG + 84,
+      :http_version, OPTION_LONG + 84,
 
       # Specifically switch on or off the FTP engine's use of the EPSV command. By
       #   default, that one will always be attempted before the more traditional
       #   PASV command.
-      :FTP_USE_EPSV, OPTION_LONG + 85,
+      :ftp_use_epsv, OPTION_LONG + 85,
 
       # type of the file keeping your SSL-certificate ("DER", "PEM", "ENG")
-      :SSLCERTTYPE, OPTION_OBJECTPOINT + 86,
+      :sslcerttype, OPTION_OBJECTPOINT + 86,
 
       # name of the file keeping your private SSL-key
-      :SSLKEY, OPTION_OBJECTPOINT + 87,
+      :sslkey, OPTION_OBJECTPOINT + 87,
 
       # type of the file keeping your private SSL-key ("DER", "PEM", "ENG")
-      :SSLKEYTYPE, OPTION_OBJECTPOINT + 88,
+      :sslkeytype, OPTION_OBJECTPOINT + 88,
 
       # crypto engine for the SSL-sub system
-      :SSLENGINE, OPTION_OBJECTPOINT + 89,
+      :sslengine, OPTION_OBJECTPOINT + 89,
 
       # set the crypto engine for the SSL-sub system as default
       #   the param has no meaning...
-      :SSLENGINE_DEFAULT, OPTION_LONG + 90,
+      :sslengine_default, OPTION_LONG + 90,
 
       # Non-zero value means to use the global dns cache
-      :DNS_USE_GLOBAL_CACHE, OPTION_LONG + 91, # To become OBSOLETE soon
+      :dns_use_global_cache, OPTION_LONG + 91, # To become OBSOLETE soon
 
       # DNS cache timeout
-      :DNS_CACHE_TIMEOUT, OPTION_LONG + 92,
+      :dns_cache_timeout, OPTION_LONG + 92,
 
       # send linked-list of pre-transfer QUOTE commands
-      :PREQUOTE, OPTION_OBJECTPOINT + 93,
+      :prequote, OPTION_OBJECTPOINT + 93,
 
       # set the debug function
-      :DEBUGFUNCTION, OPTION_FUNCTIONPOINT + 94,
+      :debugfunction, OPTION_FUNCTIONPOINT + 94,
 
       # set the data for the debug function
-      :DEBUGDATA, OPTION_OBJECTPOINT + 95,
+      :debugdata, OPTION_OBJECTPOINT + 95,
 
       # mark this as start of a cookie session
-      :COOKIESESSION, OPTION_LONG + 96,
+      :cookiesession, OPTION_LONG + 96,
 
       # The CApath directory used to validate the peer certificate
       #   this option is used only if SSL_VERIFYPEER is true
-      :CAPATH, OPTION_OBJECTPOINT + 97,
+      :capath, OPTION_OBJECTPOINT + 97,
 
       # Instruct libcurl to use a smaller receive buffer
-      :BUFFERSIZE, OPTION_LONG + 98,
+      :buffersize, OPTION_LONG + 98,
 
       # Instruct libcurl to not use any signal/alarm handlers, even when using
       #   timeouts. This option is useful for multi-threaded applications.
       #   See libcurl-the-guide for more background information.
-      :NOSIGNAL, OPTION_LONG + 99,
+      :nosignal, OPTION_LONG + 99,
 
       # Provide a CURLShare for mutexing non-ts data
-      :SHARE, OPTION_OBJECTPOINT + 100,
+      :share, OPTION_OBJECTPOINT + 100,
 
       # indicates type of proxy. accepted values are CURLPROXY_HTTP (default),
       #   CURLPROXY_SOCKS4, CURLPROXY_SOCKS4A and CURLPROXY_SOCKS5.
-      :PROXYTYPE, OPTION_LONG + 101,
+      :proxytype, OPTION_LONG + 101,
 
       # Set the Accept-Encoding string. Use this to tell a server you would like
       #   the response to be compressed.
-      :ENCODING, OPTION_OBJECTPOINT + 102,
+      :encoding, OPTION_OBJECTPOINT + 102,
 
       # Set pointer to private data
-      :PRIVATE, OPTION_OBJECTPOINT + 103,
+      :private, OPTION_OBJECTPOINT + 103,
 
       # Set aliases for HTTP 200 in the HTTP Response header
-      :HTTP200ALIASES, OPTION_OBJECTPOINT + 104,
+      :http200ALIASES, OPTION_OBJECTPOINT + 104,
 
       # Continue to send authentication (user+password) when following locations,
       #   even when hostname changed. This can potentially send off the name
       #   and password to whatever host the server decides.
-      :UNRESTRICTED_AUTH, OPTION_LONG + 105,
+      :unrestricted_auth, OPTION_LONG + 105,
 
       # Specifically switch on or off the FTP engine's use of the EPRT command ( it
       #   also disables the LPRT attempt). By default, those ones will always be
       #   attempted before the good old traditional PORT command.
-      :FTP_USE_EPRT, OPTION_LONG + 106,
+      :ftp_use_eprt, OPTION_LONG + 106,
 
 
       # Set this to a bitmask value to enable the particular authentications
       #   methods you like. Use this in combination with CURLOPT_USERPWD.
       #   Note that setting multiple bits may cause extra network round-trips.
-      :HTTPAUTH, OPTION_LONG + 107,
+      :httpauth, OPTION_LONG + 107,
 
       # Set the ssl context callback function, currently only for OpenSSL ssl_ctx
       #   in second argument. The function must be matching the
       #   curl_ssl_ctx_callback proto.
-      :SSL_CTX_FUNCTION, OPTION_FUNCTIONPOINT + 108,
+      :ssl_ctx_function, OPTION_FUNCTIONPOINT + 108,
 
       # Set the userdata for the ssl context callback function's third
       #   argument
-      :SSL_CTX_DATA, OPTION_OBJECTPOINT + 109,
+      :ssl_ctx_data, OPTION_OBJECTPOINT + 109,
 
       # FTP Option that causes missing dirs to be created on the remote server.
       #   In 7.19.4 we introduced the convenience enums for this option using the
       #   CURLFTP_CREATE_DIR prefix.
-      :FTP_CREATE_MISSING_DIRS, OPTION_LONG + 110,
+      :ftp_create_missing_dirs, OPTION_LONG + 110,
 
       # Set this to a bitmask value to enable the particular authentications
       #   methods you like. Use this in combination with CURLOPT_PROXYUSERPWD.
       #   Note that setting multiple bits may cause extra network round-trips.
-      :PROXYAUTH, OPTION_LONG + 111,
+      :proxyauth, OPTION_LONG + 111,
 
       # FTP option that changes the timeout, in seconds, associated with
       #   getting a response.  This is different from transfer timeout time and
       #   essentially places a demand on the FTP server to acknowledge commands
       #   in a timely manner.
-      :FTP_RESPONSE_TIMEOUT, OPTION_LONG + 112,
-      :CURLOPT_SERVER_RESPONSE_TIMEOUT, OPTION_LONG + 112,
+      :ftp_response_timeout, OPTION_LONG + 112,
+      :curlopt_server_response_timeout, OPTION_LONG + 112,
 
       # Set this option to one of the CURL_IPRESOLVE_* defines (see below) to
       #   tell libcurl to resolve names to those IP versions only. This only has
       #   affect on systems with support for more than one, i.e IPv4 _and_ IPv6.
-      :IPRESOLVE, OPTION_LONG + 113,
+      :ipresolve, OPTION_LONG + 113,
 
       # Set this option to limit the size of a file that will be downloaded from
       #   an HTTP or FTP server.
 
       #   Note there is also _LARGE version which adds large file support for
       #   platforms which have larger off_t sizes.  See MAXFILESIZE_LARGE below.
-      :MAXFILESIZE, OPTION_LONG + 114,
+      :maxfilesize, OPTION_LONG + 114,
 
       # See the comment for INFILESIZE above, but in short, specifies
       # the size of the file being uploaded.  -1 means unknown.
-      :INFILESIZE_LARGE, OPTION_OFF_T + 115,
+      :infilesize_large, OPTION_OFF_T + 115,
 
       # Sets the continuation offset.  There is also a OPTION_LONG version of this;
       # look above for RESUME_FROM.
-      :RESUME_FROM_LARGE, OPTION_OFF_T + 116,
+      :resume_from_large, OPTION_OFF_T + 116,
 
       # Sets the maximum size of data that will be downloaded from
       # an HTTP or FTP server.  See MAXFILESIZE above for the OPTION_LONG version.
 
-      :MAXFILESIZE_LARGE, OPTION_OFF_T + 117,
+      :maxfilesize_large, OPTION_OFF_T + 117,
 
       # Set this option to the file name of your .netrc file you want libcurl
       #   to parse (using the CURLOPT_NETRC option). If not set, libcurl will do
       #   a poor attempt to find the user's home directory and check for a .netrc
       #   file in there.
-      :NETRC_FILE, OPTION_OBJECTPOINT + 118,
+      :netrc_file, OPTION_OBJECTPOINT + 118,
 
       # Enable SSL/TLS for FTP, pick one of:
       #   CURLFTPSSL_TRY     - try using SSL, proceed anyway otherwise
       #   CURLFTPSSL_CONTROL - SSL for the control connection or fail
       #   CURLFTPSSL_ALL     - SSL for all communication or fail
 
-      :USE_SSL, OPTION_LONG + 119,
+      :use_ssl, OPTION_LONG + 119,
 
       # The _LARGE version of the standard POSTFIELDSIZE option
-      :POSTFIELDSIZE_LARGE, OPTION_OFF_T + 120,
+      :postfieldsize_large, OPTION_OFF_T + 120,
 
       # Enable/disable the TCP Nagle algorithm
-      :TCP_NODELAY, OPTION_LONG + 121,
+      :tcp_nodelay, OPTION_LONG + 121,
 
       # When FTP over SSL/TLS is selected (with CURLOPT_USE_SSL), this option
       #   can be used to change libcurl's default action which is to first try
@@ -1803,141 +1801,141 @@ module Curl
       #   CURLFTPAUTH_DEFAULT - let libcurl decide
       #   CURLFTPAUTH_SSL     - try "AUTH SSL" first, then TLS
       #   CURLFTPAUTH_TLS     - try "AUTH TLS" first, then SSL
-      :FTPSSLAUTH, OPTION_LONG + 129,
+      :ftpsslauth, OPTION_LONG + 129,
 
-      :IOCTLFUNCTION, OPTION_FUNCTIONPOINT + 130,
-      :IOCTLDATA, OPTION_OBJECTPOINT + 131,
+      :ioctlfunction, OPTION_FUNCTIONPOINT + 130,
+      :ioctldata, OPTION_OBJECTPOINT + 131,
 
       # zero terminated string for pass on to the FTP server when asked for
       #   "account" info
-      :FTP_ACCOUNT, OPTION_OBJECTPOINT + 134,
+      :ftp_account, OPTION_OBJECTPOINT + 134,
 
       # feed cookies into cookie engine
-      :COOKIELIST, OPTION_OBJECTPOINT + 135,
+      :cookielist, OPTION_OBJECTPOINT + 135,
 
       # ignore Content-Length
-      :IGNORE_CONTENT_LENGTH, OPTION_LONG + 136,
+      :ignore_content_length, OPTION_LONG + 136,
 
       # Set to non-zero to skip the IP address received in a 227 PASV FTP server
       #   response. Typically used for FTP-SSL purposes but is not restricted to
       #   that. libcurl will then instead use the same IP address it used for the
       #   control connection.
-      :FTP_SKIP_PASV_IP, OPTION_LONG + 137,
+      :ftp_skip_pasv_ip, OPTION_LONG + 137,
 
       # Select "file method" to use when doing FTP, see the curl_ftpmethod
       #   above.
-      :FTP_FILEMETHOD, OPTION_LONG + 138,
+      :ftp_filemethod, OPTION_LONG + 138,
 
       # Local port number to bind the socket to
-      :LOCALPORT, OPTION_LONG + 139,
+      :localport, OPTION_LONG + 139,
 
       # Number of ports to try, including the first one set with LOCALPORT.
       #   Thus, setting it to 1 will make no additional attempts but the first.
 
-      :LOCALPORTRANGE, OPTION_LONG + 140,
+      :localportrange, OPTION_LONG + 140,
 
       # no transfer, set up connection and let application use the socket by
       #   extracting it with CURLINFO_LASTSOCKET
-      :CONNECT_ONLY, OPTION_LONG + 141,
+      :connect_only, OPTION_LONG + 141,
 
       # Function that will be called to convert from the
       #   network encoding (instead of using the iconv calls in libcurl)
-      :CONV_FROM_NETWORK_FUNCTION, OPTION_FUNCTIONPOINT + 142,
+      :conv_from_network_function, OPTION_FUNCTIONPOINT + 142,
 
       # Function that will be called to convert to the
       #   network encoding (instead of using the iconv calls in libcurl)
-      :CONV_TO_NETWORK_FUNCTION, OPTION_FUNCTIONPOINT + 143,
+      :conv_to_network_function, OPTION_FUNCTIONPOINT + 143,
 
       # Function that will be called to convert from UTF8
       #   (instead of using the iconv calls in libcurl)
       #   Note that this is used only for SSL certificate processing
-      :CONV_FROM_UTF8_FUNCTION, OPTION_FUNCTIONPOINT + 144,
+      :conv_from_utf8_FUNCTION, OPTION_FUNCTIONPOINT + 144,
 
       # if the connection proceeds too quickly then need to slow it down
       # limit-rate: maximum number of bytes per second to send or receive
-      :MAX_SEND_SPEED_LARGE, OPTION_OFF_T + 145,
-      :MAX_RECV_SPEED_LARGE, OPTION_OFF_T + 146,
+      :max_send_speed_large, OPTION_OFF_T + 145,
+      :max_recv_speed_large, OPTION_OFF_T + 146,
 
       # Pointer to command string to send if USER/PASS fails.
-      :FTP_ALTERNATIVE_TO_USER, OPTION_OBJECTPOINT + 147,
+      :ftp_alternative_to_user, OPTION_OBJECTPOINT + 147,
 
       # callback function for setting socket options
-      :SOCKOPTFUNCTION, OPTION_FUNCTIONPOINT + 148,
-      :SOCKOPTDATA, OPTION_OBJECTPOINT + 149,
+      :sockoptfunction, OPTION_FUNCTIONPOINT + 148,
+      :sockoptdata, OPTION_OBJECTPOINT + 149,
 
       # set to 0 to disable session ID re-use for this transfer, default is
       #   enabled (== 1)
-      :SSL_SESSIONID_CACHE, OPTION_LONG + 150,
+      :ssl_sessionid_cache, OPTION_LONG + 150,
 
       # allowed SSH authentication methods
-      :SSH_AUTH_TYPES, OPTION_LONG + 151,
+      :ssh_auth_types, OPTION_LONG + 151,
 
       # Used by scp/sftp to do public/private key authentication
-      :SSH_PUBLIC_KEYFILE, OPTION_OBJECTPOINT + 152,
-      :SSH_PRIVATE_KEYFILE, OPTION_OBJECTPOINT + 153,
+      :ssh_public_keyfile, OPTION_OBJECTPOINT + 152,
+      :ssh_private_keyfile, OPTION_OBJECTPOINT + 153,
 
       # Send CCC (Clear Command Channel) after authentication
-      :FTP_SSL_CCC, OPTION_LONG + 154,
+      :ftp_ssl_ccc, OPTION_LONG + 154,
 
       # Same as TIMEOUT and CONNECTTIMEOUT, but with ms resolution
-      :TIMEOUT_MS, OPTION_LONG + 155,
-      :CONNECTTIMEOUT_MS, OPTION_LONG + 156,
+      :timeout_ms, OPTION_LONG + 155,
+      :connecttimeout_ms, OPTION_LONG + 156,
 
       # set to zero to disable the libcurl's decoding and thus pass the raw body
       #   data to the application even when it is encoded/compressed
-      :HTTP_TRANSFER_DECODING, OPTION_LONG + 157,
-      :HTTP_CONTENT_DECODING, OPTION_LONG + 158,
+      :http_transfer_decoding, OPTION_LONG + 157,
+      :http_content_decoding, OPTION_LONG + 158,
 
       # Permission used when creating new files and directories on the remote
       #   server for protocols that support it, SFTP/SCP/FILE
-      :NEW_FILE_PERMS, OPTION_LONG + 159,
-      :NEW_DIRECTORY_PERMS, OPTION_LONG + 160,
+      :new_file_perms, OPTION_LONG + 159,
+      :new_directory_perms, OPTION_LONG + 160,
 
       # Set the behaviour of POST when redirecting. Values must be set to one
       #   of CURL_REDIR* defines below. This used to be called CURLOPT_POST301
-      :POSTREDIR, OPTION_LONG + 161,
+      :postredir, OPTION_LONG + 161,
 
       # used by scp/sftp to verify the host's public key
-      :SSH_HOST_PUBLIC_KEY_MD5, OPTION_OBJECTPOINT + 162,
+      :ssh_host_public_key_md5, OPTION_OBJECTPOINT + 162,
 
       # Callback function for opening socket (instead of socket(2)). Optionally,
       #   callback is able change the address or refuse to connect returning
       #   CURL_SOCKET_BAD.  The callback should have type
       #   curl_opensocket_callback
-      :OPENSOCKETFUNCTION, OPTION_FUNCTIONPOINT + 163,
-      :OPENSOCKETDATA, OPTION_OBJECTPOINT + 164,
+      :opensocketfunction, OPTION_FUNCTIONPOINT + 163,
+      :opensocketdata, OPTION_OBJECTPOINT + 164,
 
       # POST volatile input fields.
-      :COPYPOSTFIELDS, OPTION_OBJECTPOINT + 165,
+      :copypostfields, OPTION_OBJECTPOINT + 165,
 
       # set transfer mode (;type=<a|i>) when doing FTP via an HTTP proxy
-      :PROXY_TRANSFER_MODE, OPTION_LONG + 166,
+      :proxy_transfer_mode, OPTION_LONG + 166,
 
       # Callback function for seeking in the input stream
-      :SEEKFUNCTION, OPTION_FUNCTIONPOINT + 167,
-      :SEEKDATA, OPTION_OBJECTPOINT + 168,
+      :seekfunction, OPTION_FUNCTIONPOINT + 167,
+      :seekdata, OPTION_OBJECTPOINT + 168,
 
       # CRL file
-      :CRLFILE, OPTION_OBJECTPOINT + 169,
+      :crlfile, OPTION_OBJECTPOINT + 169,
 
       # Issuer certificate
-      :ISSUERCERT, OPTION_OBJECTPOINT + 170,
+      :issuercert, OPTION_OBJECTPOINT + 170,
 
       # (IPv6) Address scope
-      :ADDRESS_SCOPE, OPTION_LONG + 171,
+      :address_scope, OPTION_LONG + 171,
 
       # Collect certificate chain info and allow it to get retrievable with
       #   CURLINFO_CERTINFO after the transfer is complete. (Unfortunately) only
       #   working with OpenSSL-powered builds.
-      :CERTINFO, OPTION_LONG + 172,
+      :certinfo, OPTION_LONG + 172,
 
       # "name" and "pwd" to use when fetching.
-      :USERNAME, OPTION_OBJECTPOINT + 173,
-      :PASSWORD, OPTION_OBJECTPOINT + 174,
+      :username, OPTION_OBJECTPOINT + 173,
+      :password, OPTION_OBJECTPOINT + 174,
 
         # "name" and "pwd" to use with Proxy when fetching.
-      :PROXYUSERNAME, OPTION_OBJECTPOINT + 175,
-      :PROXYPASSWORD, OPTION_OBJECTPOINT + 176,
+      :proxyusername, OPTION_OBJECTPOINT + 175,
+      :proxypassword, OPTION_OBJECTPOINT + 176,
 
       # Comma separated list of hostnames defining no-proxy zones. These should
       #   match both hostnames directly, and hostnames within a domain. For
@@ -1946,145 +1944,145 @@ module Curl
       #   implementations of this, .local.com will be considered to be the same as
       #   local.com. A single# is the only valid wildcard, and effectively
       #   disables the use of proxy.
-      :NOPROXY, OPTION_OBJECTPOINT + 177,
+      :noproxy, OPTION_OBJECTPOINT + 177,
 
       # block size for TFTP transfers
-      :TFTP_BLKSIZE, OPTION_LONG + 178,
+      :tftp_blksize, OPTION_LONG + 178,
 
       # Socks Service
-      :SOCKS5_GSSAPI_SERVICE, OPTION_OBJECTPOINT + 179,
+      :socks5_GSSAPI_SERVICE, OPTION_OBJECTPOINT + 179,
 
       # Socks Service
-      :SOCKS5_GSSAPI_NEC, OPTION_LONG + 180,
+      :socks5_GSSAPI_NEC, OPTION_LONG + 180,
 
       # set the bitmask for the protocols that are allowed to be used for the
       #   transfer, which thus helps the app which takes URLs from users or other
       #   external inputs and want to restrict what protocol(s) to deal
       #   with. Defaults to CURLPROTO_ALL.
-      :PROTOCOLS, OPTION_LONG + 181,
+      :protocols, OPTION_LONG + 181,
 
       # set the bitmask for the protocols that libcurl is allowed to follow to,
       #   as a subset of the CURLOPT_PROTOCOLS ones. That means the protocol needs
       #   to be set in both bitmasks to be allowed to get redirected to. Defaults
       #   to all protocols except FILE and SCP.
-      :REDIR_PROTOCOLS, OPTION_LONG + 182,
+      :redir_protocols, OPTION_LONG + 182,
 
       # set the SSH knownhost file name to use
-      :SSH_KNOWNHOSTS, OPTION_OBJECTPOINT + 183,
+      :ssh_knownhosts, OPTION_OBJECTPOINT + 183,
 
       # set the SSH host key callback, must point to a curl_sshkeycallback
       #   function
-      :SSH_KEYFUNCTION, OPTION_FUNCTIONPOINT + 184,
+      :ssh_keyfunction, OPTION_FUNCTIONPOINT + 184,
 
       # set the SSH host key callback custom pointer
-      :SSH_KEYDATA, OPTION_OBJECTPOINT + 185,
+      :ssh_keydata, OPTION_OBJECTPOINT + 185,
 
       # set the SMTP mail originator
-      :MAIL_FROM, OPTION_OBJECTPOINT + 186,
+      :mail_from, OPTION_OBJECTPOINT + 186,
 
       # set the SMTP mail receiver(s)
-      :MAIL_RCPT, OPTION_OBJECTPOINT + 187,
+      :mail_rcpt, OPTION_OBJECTPOINT + 187,
 
       # FTP: send PRET before PASV
-      :FTP_USE_PRET, OPTION_LONG + 188,
+      :ftp_use_pret, OPTION_LONG + 188,
 
       # RTSP request method (OPTIONS, SETUP, PLAY, etc...)
-      :RTSP_REQUEST, OPTION_LONG + 189,
+      :rtsp_request, OPTION_LONG + 189,
 
       # The RTSP session identifier
-      :RTSP_SESSION_ID, OPTION_OBJECTPOINT + 190,
+      :rtsp_session_id, OPTION_OBJECTPOINT + 190,
 
       # The RTSP stream URI
-      :RTSP_STREAM_URI, OPTION_OBJECTPOINT + 191,
+      :rtsp_stream_uri, OPTION_OBJECTPOINT + 191,
 
       # The Transport: header to use in RTSP requests
-      :RTSP_TRANSPORT, OPTION_OBJECTPOINT + 192,
+      :rtsp_transport, OPTION_OBJECTPOINT + 192,
 
       # Manually initialize the client RTSP CSeq for this handle
-      :RTSP_CLIENT_CSEQ, OPTION_LONG + 193,
+      :rtsp_client_cseq, OPTION_LONG + 193,
 
       # Manually initialize the server RTSP CSeq for this handle
-      :RTSP_SERVER_CSEQ, OPTION_LONG + 194,
+      :rtsp_server_cseq, OPTION_LONG + 194,
 
       # The stream to pass to INTERLEAVEFUNCTION.
-      :INTERLEAVEDATA, OPTION_OBJECTPOINT + 195,
+      :interleavedata, OPTION_OBJECTPOINT + 195,
 
       # Let the application define a custom write method for RTP data
-      :INTERLEAVEFUNCTION, OPTION_FUNCTIONPOINT + 196,
+      :interleavefunction, OPTION_FUNCTIONPOINT + 196,
 
       # Turn on wildcard matching
-      :WILDCARDMATCH, OPTION_LONG + 197,
+      :wildcardmatch, OPTION_LONG + 197,
 
       # Directory matching callback called before downloading of an
       #   individual file (chunk) started
-      :CHUNK_BGN_FUNCTION, OPTION_FUNCTIONPOINT + 198,
+      :chunk_bgn_function, OPTION_FUNCTIONPOINT + 198,
 
       # Directory matching callback called after the file (chunk)
       #   was downloaded, or skipped
-      :CHUNK_END_FUNCTION, OPTION_FUNCTIONPOINT + 199,
+      :chunk_end_function, OPTION_FUNCTIONPOINT + 199,
 
       # Change match (fnmatch-like) callback for wildcard matching
-      :FNMATCH_FUNCTION, OPTION_FUNCTIONPOINT + 200,
+      :fnmatch_function, OPTION_FUNCTIONPOINT + 200,
 
       # Let the application define custom chunk data pointer
-      :CHUNK_DATA, OPTION_OBJECTPOINT + 201,
+      :chunk_data, OPTION_OBJECTPOINT + 201,
 
       # FNMATCH_FUNCTION user pointer
-      :FNMATCH_DATA, OPTION_OBJECTPOINT + 202,
+      :fnmatch_data, OPTION_OBJECTPOINT + 202,
     ]
 
     MULTI_OPTION = enum :multi_option, [
-      :SOCKETFUNCTION, 1 + OPTION_FUNCTIONPOINT,
-      :SOCKETDATA,     2 + OPTION_OBJECTPOINT,
-      :PIPELINING,     3 + OPTION_LONG,
-      :TIMERFUNCTION,  4 + OPTION_FUNCTIONPOINT,
-      :TIMERDATA,      5 + OPTION_OBJECTPOINT,
-      :MAXCONNECTS,    6 + OPTION_LONG
+      :socketfunction, 1 + OPTION_FUNCTIONPOINT,
+      :socketdata,     2 + OPTION_OBJECTPOINT,
+      :pipelining,     3 + OPTION_LONG,
+      :timerfunction,  4 + OPTION_FUNCTIONPOINT,
+      :timerdata,      5 + OPTION_OBJECTPOINT,
+      :maxconnects,    6 + OPTION_LONG
     ]
 
     INFO = enum :info, [
-      :EFFECTIVE_URL,           INFO_STRING + 1,
-      :RESPONSE_CODE,           INFO_LONG   + 2,
-      :TOTAL_TIME,              INFO_DOUBLE + 3,
-      :NAMELOOKUP_TIME,         INFO_DOUBLE + 4,
-      :CONNECT_TIME,            INFO_DOUBLE + 5,
-      :PRETRANSFER_TIME,        INFO_DOUBLE + 6,
-      :SIZE_UPLOAD,             INFO_DOUBLE + 7,
-      :SIZE_DOWNLOAD,           INFO_DOUBLE + 8,
-      :SPEED_DOWNLOAD,          INFO_DOUBLE + 9,
-      :SPEED_UPLOAD,            INFO_DOUBLE + 10,
-      :HEADER_SIZE,             INFO_LONG   + 11,
-      :REQUEST_SIZE,            INFO_LONG   + 12,
-      :SSL_VERIFYRESULT,        INFO_LONG   + 13,
-      :FILETIME,                INFO_LONG   + 14,
-      :CONTENT_LENGTH_DOWNLOAD, INFO_DOUBLE + 15,
-      :CONTENT_LENGTH_UPLOAD,   INFO_DOUBLE + 16,
-      :STARTTRANSFER_TIME,      INFO_DOUBLE + 17,
-      :CONTENT_TYPE,            INFO_STRING + 18,
-      :REDIRECT_TIME,           INFO_DOUBLE + 19,
-      :REDIRECT_COUNT,          INFO_LONG   + 20,
-      :PRIVATE,                 INFO_STRING + 21,
-      :HTTP_CONNECTCODE,        INFO_LONG   + 22,
-      :HTTPAUTH_AVAIL,          INFO_LONG   + 23,
-      :PROXYAUTH_AVAIL,         INFO_LONG   + 24,
-      :OS_ERRNO,                INFO_LONG   + 25,
-      :NUM_CONNECTS,            INFO_LONG   + 26,
-      :SSL_ENGINES,             INFO_SLIST  + 27,
-      :COOKIELIST,              INFO_SLIST  + 28,
-      :LASTSOCKET,              INFO_LONG   + 29,
-      :FTP_ENTRY_PATH,          INFO_STRING + 30,
-      :REDIRECT_URL,            INFO_STRING + 31,
-      :PRIMARY_IP,              INFO_STRING + 32,
-      :APPCONNECT_TIME,         INFO_DOUBLE + 33,
-      :CERTINFO,                INFO_SLIST  + 34,
-      :CONDITION_UNMET,         INFO_LONG   + 35,
-      :RTSP_SESSION_ID,         INFO_STRING + 36,
-      :RTSP_CLIENT_CSEQ,        INFO_LONG   + 37,
-      :RTSP_SERVER_CSEQ,        INFO_LONG   + 38,
-      :RTSP_CSEQ_RECV,          INFO_LONG   + 39,
-      :PRIMARY_PORT,            INFO_LONG   + 40,
-      :LOCAL_IP,                INFO_STRING + 41,
-      :LOCAL_PORT,              INFO_LONG   + 42
+      :effective_url,           INFO_STRING + 1,
+      :response_code,           INFO_LONG   + 2,
+      :total_time,              INFO_DOUBLE + 3,
+      :namelookup_time,         INFO_DOUBLE + 4,
+      :connect_time,            INFO_DOUBLE + 5,
+      :pretransfer_time,        INFO_DOUBLE + 6,
+      :size_upload,             INFO_DOUBLE + 7,
+      :size_download,           INFO_DOUBLE + 8,
+      :speed_download,          INFO_DOUBLE + 9,
+      :speed_upload,            INFO_DOUBLE + 10,
+      :header_size,             INFO_LONG   + 11,
+      :request_size,            INFO_LONG   + 12,
+      :ssl_verifyresult,        INFO_LONG   + 13,
+      :filetime,                INFO_LONG   + 14,
+      :content_length_download, INFO_DOUBLE + 15,
+      :content_length_upload,   INFO_DOUBLE + 16,
+      :starttransfer_time,      INFO_DOUBLE + 17,
+      :content_type,            INFO_STRING + 18,
+      :redirect_time,           INFO_DOUBLE + 19,
+      :redirect_count,          INFO_LONG   + 20,
+      :private,                 INFO_STRING + 21,
+      :http_connectcode,        INFO_LONG   + 22,
+      :httpauth_avail,          INFO_LONG   + 23,
+      :proxyauth_avail,         INFO_LONG   + 24,
+      :os_errno,                INFO_LONG   + 25,
+      :num_connects,            INFO_LONG   + 26,
+      :ssl_engines,             INFO_SLIST  + 27,
+      :cookielist,              INFO_SLIST  + 28,
+      :lastsocket,              INFO_LONG   + 29,
+      :ftp_entry_path,          INFO_STRING + 30,
+      :redirect_url,            INFO_STRING + 31,
+      :primary_ip,              INFO_STRING + 32,
+      :appconnect_time,         INFO_DOUBLE + 33,
+      :certinfo,                INFO_SLIST  + 34,
+      :condition_unmet,         INFO_LONG   + 35,
+      :rtsp_session_id,         INFO_STRING + 36,
+      :rtsp_client_cseq,        INFO_LONG   + 37,
+      :rtsp_server_cseq,        INFO_LONG   + 38,
+      :rtsp_cseq_recv,          INFO_LONG   + 39,
+      :primary_port,            INFO_LONG   + 40,
+      :local_ip,                INFO_STRING + 41,
+      :local_port,              INFO_LONG   + 42
     ]
     
     # (Not documented)

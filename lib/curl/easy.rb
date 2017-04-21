@@ -326,7 +326,7 @@ module Curl
 
     def response_code
       ptr = Core::IntPtr.new
-      res = Core.easy_getinfo(handle, :RESPONSE_CODE, ptr)
+      res = Core.easy_getinfo(handle, :response_code, ptr)
       ptr[:value]
     end  
 
@@ -356,78 +356,78 @@ module Curl
         raise(Err::CurlError.new("No URL Supplied"))
       end
 
-      Core.easy_setopt(handle, :URL, url)
+      Core.easy_setopt(handle, :url, url)
 
-      Core.easy_setopt(handle, :USERNAME, username) if !username.nil?
-      Core.easy_setopt(handle, :PASSWORD, password) if !password.nil?
-      Core.easy_setopt(handle, :USERPWD, userpwd) if !userpwd.nil?
+      Core.easy_setopt(handle, :username, username) if !username.nil?
+      Core.easy_setopt(handle, :password, password) if !password.nil?
+      Core.easy_setopt(handle, :userpwd, userpwd) if !userpwd.nil?
       if use_netrc?
-        Core.easy_setopt(handle, :NETRC, :optional)
+        Core.easy_setopt(handle, :netrc, :optional)
       else
-        Core.easy_setopt(handle, :NETRC, :ignored)
+        Core.easy_setopt(handle, :netrc, :ignored)
       end
-      Core.easy_setopt(handle, :UNRESTRICTED_AUTH, unrestricted_auth? ? 1 : 0)
+      Core.easy_setopt(handle, :unrestricted_auth, unrestricted_auth? ? 1 : 0)
       
       
-      Core.easy_setopt(handle, :HTTPAUTH, 16)
+      Core.easy_setopt(handle, :httpauth, 16)
       # TODO Core.easy_setopt(handle, :HTTPAUTH, http_auth_types)
       
 
-      Core.easy_setopt(handle, :PROXY, proxy_url) if !proxy_url.nil?
-      Core.easy_setopt(handle, :PROXYUSERPWD, proxypwd) if !proxypwd.nil?
+      Core.easy_setopt(handle, :proxy, proxy_url) if !proxy_url.nil?
+      Core.easy_setopt(handle, :proxyuserpwd, proxypwd) if !proxypwd.nil?
 
-      Core.easy_setopt(handle, :PROXYPORT, proxy_port) if !proxy_port.nil?
-      Core.easy_setopt(handle, :LOCALPORT, local_port) if !local_port.nil?
-      Core.easy_setopt(handle, :LOCALPORTRANGE, local_port_range) if !local_port_range.nil?
+      Core.easy_setopt(handle, :proxyport, proxy_port) if !proxy_port.nil?
+      Core.easy_setopt(handle, :localpory, local_port) if !local_port.nil?
+      Core.easy_setopt(handle, :localportrange, local_port_range) if !local_port_range.nil?
 
-      Core.easy_setopt(handle, :ENCODING, encoding) if !encoding.nil?
+      Core.easy_setopt(handle, :encoding, encoding) if !encoding.nil?
 
-      Core.easy_setopt(handle, :TIMEOUT, timeout) if !timeout.nil?
-      Core.easy_setopt(handle, :TIMEOUT_MS, timeout_ms) if !timeout_ms.nil?
-      Core.easy_setopt(handle, :CONNECTTIMEOUT, connect_timeout) if !connect_timeout.nil?
-      Core.easy_setopt(handle, :CONNECTTIMEOUT_MS, connect_timeout_ms) if !connect_timeout_ms.nil?
-      Core.easy_setopt(handle, :DNS_CACHE_TIMEOUT, dns_cache_timeout) if !dns_cache_timeout.nil?
-      Core.easy_setopt(handle, :FTP_RESPONSE_TIMEOUT, ftp_response_timeout) if !ftp_response_timeout.nil?
+      Core.easy_setopt(handle, :timeout, timeout) if !timeout.nil?
+      Core.easy_setopt(handle, :timeout_ms, timeout_ms) if !timeout_ms.nil?
+      Core.easy_setopt(handle, :connecttimeout, connect_timeout) if !connect_timeout.nil?
+      Core.easy_setopt(handle, :connecttimeout_ms, connect_timeout_ms) if !connect_timeout_ms.nil?
+      Core.easy_setopt(handle, :dns_cache_timeout, dns_cache_timeout) if !dns_cache_timeout.nil?
+      Core.easy_setopt(handle, :ftp_response_timeout, ftp_response_timeout) if !ftp_response_timeout.nil?
 
-      Core.easy_setopt(handle, :LOW_SPEED_LIMIT, low_speed_limit) if !low_speed_limit.nil?
-      Core.easy_setopt(handle, :LOW_SPEED_TIME, low_speed_limit) if !low_speed_time.nil?
+      Core.easy_setopt(handle, :low_speed_limit, low_speed_limit) if !low_speed_limit.nil?
+      Core.easy_setopt(handle, :low_speed_time, low_speed_limit) if !low_speed_time.nil?
 
       # General options
-      Core.easy_setopt(handle, :HEADER, header_in_body? ? 1 : 0)
-      Core.easy_setopt(handle, :FOLLOWLOCATION, follow_location? ? 1 : 0)
-      Core.easy_setopt(handle, :MAXREDIRS, max_redirects) if !max_redirects.nil?
+      Core.easy_setopt(handle, :header, header_in_body? ? 1 : 0)
+      Core.easy_setopt(handle, :followlocation, follow_location? ? 1 : 0)
+      Core.easy_setopt(handle, :maxredirs, max_redirects) if !max_redirects.nil?
 
-      Core.easy_setopt(handle, :HTTPPROXYTUNNEL, proxy_tunnel? ? 1 : 0)
-      Core.easy_setopt(handle, :FILETIME, fetch_file_time? ? 1 : 0)
+      Core.easy_setopt(handle, :httpproxytunnel, proxy_tunnel? ? 1 : 0)
+      Core.easy_setopt(handle, :filetime, fetch_file_time? ? 1 : 0)
 
-      Core.easy_setopt(handle, :SSL_VERIFYPEER, ssl_verify_peer? ? 1 : 0)
-      Core.easy_setopt(handle, :SSL_VERIFYHOST, ssl_verify_host? ? 1 : 0)
+      Core.easy_setopt(handle, :ssl_verifypeer, ssl_verify_peer? ? 1 : 0)
+      Core.easy_setopt(handle, :ssl_verifyhost, ssl_verify_host? ? 1 : 0)
 
       # SSL
-      Core.easy_setopt(handle, :SSLCERT, cert) if !cert.nil?
-      Core.easy_setopt(handle, :SSLCERTTYPE, certtype) if !certtype.nil?
-      Core.easy_setopt(handle, :SSLCERTPASSWORD, certpassword) if !certpassword.nil?
-      Core.easy_setopt(handle, :SSLKEY, cert_key) if !cert_key.nil?
-      Core.easy_setopt(handle, :CAINFO, cacert) if !cacert.nil?
+      Core.easy_setopt(handle, :sslcert, cert) if !cert.nil?
+      Core.easy_setopt(handle, :sslcerttype, certtype) if !certtype.nil?
+      Core.easy_setopt(handle, :sslcertpassword, certpassword) if !certpassword.nil?
+      Core.easy_setopt(handle, :sslkey, cert_key) if !cert_key.nil?
+      Core.easy_setopt(handle, :cainfo, cacert) if !cacert.nil?
 
 
       # CALLBACKS
-      Core.easy_setopt_string_function(handle, :WRITEFUNCTION, method(:body_callback).to_proc)
-      Core.easy_setopt_string_function(handle, :HEADERFUNCTION, method(:header_callback).to_proc)
+      Core.easy_setopt_string_function(handle, :writefunction, method(:body_callback).to_proc)
+      Core.easy_setopt_string_function(handle, :headerfunction, method(:header_callback).to_proc)
       if !@on_progress.nil?
-        Core.easy_setopt_progress_function(handle, :PROGRESSFUNCTION, method(:progress_callback).to_proc)
-        Core.easy_setopt(handle, :NOPROGRESS, 0)
+        Core.easy_setopt_progress_function(handle, :progressfunction, method(:progress_callback).to_proc)
+        Core.easy_setopt(handle, :noprogress, 0)
       else
-        Core.easy_setopt(handle, :NOPROGRESS, 1)
+        Core.easy_setopt(handle, :noprogress, 1)
       end
 
       # COOKIES
       if (cookies_enabled?)
-        Core.easy_setopt(handle, COOKIEJAR, cookiejar) if !cookiejar.nil?
-        Core.easy_setopt(handle, COOKIEFILE, cookiefile || nil) # "" = magic to just enable
+        Core.easy_setopt(handle, :cookiejar, cookiejar) if !cookiejar.nil?
+        Core.easy_setopt(handle, :cookiefile, cookiefile || nil) # "" = magic to just enable
       end
 
-      Core.easy_setopt(handle, COOKIE, cookies) if !cookies.nil?
+      Core.easy_setopt(handle, :cookie, cookies) if !cookies.nil?
 
       # TODO The metric fuck-ton of other setup that needs doing...
     end
@@ -452,28 +452,13 @@ module Curl
     # set options on the curl easy handle see http://curl.haxx.se/libcurl/c/curl_easy_setopt.html
     #
     def set(opt,val)
-      if opt.is_a?(Symbol)
-        option = sym2curl(opt)
-      else
-        option = opt.to_i
-      end
+      opt = opt.to_i unless opt.is_a?(Symbol)
 
       begin
         Core.easy_setopt(handle, option, val)
       rescue TypeError
         raise TypeError, "Curb doesn't support setting #{opt} [##{option}] option"
       end
-    end
-
-    # call-seq:
-    #   easy.sym2curl :symbol => Fixnum
-    #
-    #  translates ruby symbols to libcurl options
-    #
-    def sym2curl(opt)      
-      #Curl.const_get("CURLOPT_#{opt.to_s.upcase}")
-      p "sym2curl: #{opt.inspect} -> #{Core::OPTION[opt.to_s.upcase.intern]}"
-      Core::OPTION[opt.to_s.upcase.intern]    # TODO inefficiency with all the upcasing and the interning...
     end
 
     #
@@ -798,11 +783,11 @@ module Curl
     alias delete http_delete
 
     def http(verb)
-      Core.easy_setopt(handle, :CUSTOMREQUEST, verb.to_s)
+      Core.easy_setopt(handle, :customrequest, verb.to_s)
       begin
         return self.perform
       ensure
-        Core.easy_setopt(handle, :CUSTOMREQUEST, nil)
+        Core.easy_setopt(handle, :customrequest, nil)
       end
     end
 
