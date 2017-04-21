@@ -421,6 +421,14 @@ module Curl
         Core.easy_setopt(handle, :NOPROGRESS, 1)
       end
 
+      # COOKIES
+      if (cookies_enabled?)
+        Core.easy_setopt(handle, COOKIEJAR, cookiejar) if !cookiejar.nil?
+        Core.easy_setopt(handle, COOKIEFILE, cookiefile || nil) # "" = magic to just enable
+      end
+
+      Core.easy_setopt(handle, COOKIE, cookies) if !cookies.nil?
+
       # TODO The metric fuck-ton of other setup that needs doing...
     end
 
@@ -631,6 +639,34 @@ module Curl
       set :proxyuserpwd, value
     end
 
+    # call-seq:
+    #   easy.enable_cookies = boolean                    => boolean
+    #
+    # Configure whether the libcurl cookie engine is enabled for this Curl::Easy
+    # instance.
+    def enable_cookies=(bool)
+      @enable_cookies = (bool ? true : false)
+    end
+
+    # call-seq:
+    #   easy.enable_cookies?                             => boolean
+    #
+    # Determine whether the libcurl cookie engine is enabled for this
+    # Curl::Easy instance.
+    def enable_cookies?
+      @enable_cookies
+    end
+
+    alias cookies_enabled? enable_cookies?
+
+    # call-seq:
+    #   easy.cookies                                     => "name1=content1; name2=content2;"
+    #
+    # Obtain the cookies for this Curl::Easy instance.
+    def cookies
+      @cookies
+    end    
+
     #
     # call-seq:
     #   easy.cookies = "name1=content1; name2=content2;" => string
@@ -640,8 +676,16 @@ module Curl
     # Set multiple cookies in one string like this: "name1=content1; name2=content2;" etc.
     #
     def cookies=(value)
-      set :cookie, value
+      @cookies = value
     end
+
+    # call-seq:
+    #   easy.cookiefile                                  => string
+    #
+    # Obtain the cookiefile file for this Curl::Easy instance.
+    def cookiefile
+      @cookiefile
+    end    
 
     #
     # call-seq:
@@ -653,7 +697,15 @@ module Curl
     # engine, or this option will be ignored.
     #
     def cookiefile=(value)
-      set :cookiefile, value
+      @cookiefile = value
+    end
+
+    # call-seq:
+    #   easy.cookiejar                                   => string
+    #
+    # Obtain the cookiejar file to use for this Curl::Easy instance.
+    def cookie_jar
+      @cookiejar
     end
 
     #
@@ -667,7 +719,7 @@ module Curl
     # engine, or this option will be ignored.
     #
     def cookiejar=(value)
-      set :cookiejar, value
+      @cookiejar = value
     end
 
     #
@@ -693,6 +745,11 @@ module Curl
       @follow_location = (onoff ? true : false)
     end
 
+    # call-seq:
+    #   easy.follow_location?                            => boolean
+    #
+    # Determine whether this Curl instance will follow Location: headers
+    # in HTTP responses.
     def follow_location?
       @follow_location
     end
