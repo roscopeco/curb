@@ -454,10 +454,16 @@ module Curl
     def set(opt,val)
       opt = opt.to_i unless opt.is_a?(Symbol)
 
+      if opt.is_a? Fixnum
+        raise(TypeError.new("Unknown Curl Option")) unless optsym = Core::OPTION[opt]
+      else
+        optsym, opt = opt, Core.sym2num(opt)
+      end
+
       begin
-        Core.easy_setopt(handle, option, val)
-      rescue TypeError
-        raise TypeError, "Curb doesn't support setting #{opt} [##{option}] option"
+        Core.easy_setopt(handle, optsym, val)
+      rescue TypeError => x
+        raise TypeError, "Curb doesn't support setting #{optsym} [##{opt}] option"
       end
     end
 
