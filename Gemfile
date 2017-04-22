@@ -2,6 +2,8 @@ source 'https://rubygems.org'
 
 gemspec
 
+gem 'ffi'
+
 group 'development', 'test' do
   gem 'rdoc'
   gem 'rake'
