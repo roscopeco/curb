@@ -1,5 +1,6 @@
 require 'curl/curb_core_ffi'
 require 'curl/errors'
+require 'curl/postfield'
 
 module Curl
   class Multi

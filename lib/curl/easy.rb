@@ -1,4 +1,5 @@
 require 'curl/curb_core_ffi'
+require 'curl/multi'
 require 'curl/errors'
 
 module Curl
@@ -179,9 +180,6 @@ module Curl
       @unrestricted_auth
     end
 
-    def unescape(*args)
-    end
-
     # TODO this should be readonly...
     attr_accessor :multi
 
@@ -204,7 +202,12 @@ module Curl
       @headers ||= {}
     end
 
-    def escape(*args)
+    def escape(str)
+      Curl.escape(str)
+    end
+
+    def unescape(str)
+      Curl.unescape(str)
     end
 
     def verbose?
@@ -315,6 +318,8 @@ module Curl
       ptr = Core::OutPtr.new
       Core.easy_getinfo(handle, :effective_url,  ptr)
 
+      # TODO this doesn't work, because COW....
+      #
       # make a pointer from the out-int, get string, and dup to be safe.
       # The memory stays around until curl_easy_cleanup is called, butif the
       # string lasts longer there'll be a segfault at some random time later...

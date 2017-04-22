@@ -73,4 +73,11 @@ module Curl
     Thread.current[:curb_curl] = Curl::Easy.new
   end
 
+  def self.escape(str)
+    URI.escape(str)
+  end
+
+  def self.unescape(str)
+    URI.unescape(str)
+  end
 end

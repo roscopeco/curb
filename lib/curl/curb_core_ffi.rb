@@ -9,20 +9,6 @@
 require 'ffi'
 
 module Curl
-  class PostField
-    class << self
-      def file(*args)
-        PostField.new
-      end
-      
-      def content(*args)
-        PostField.new
-      end
-    end
-    
-    attr_reader(:name, :remote_file, :local_file, :content_type)
-  end  
-
   module Libc
       extend FFI::Library
       ffi_lib 'c'
