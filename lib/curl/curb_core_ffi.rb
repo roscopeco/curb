@@ -518,19 +518,7 @@ module Curl
     # @return [FFI::Pointer(*Void)] 
     # @scope class
     callback :fnmatch_callback, [:pointer, :string, :string], :pointer
-    
-    # (Not documented)
-    # 
-    # <em>This entry is only for documentation and no real method.</em>
-    # 
-    # @method _callback_seek_callback_(instream, offset, origin)
-    # @param [FFI::Pointer(*Void)] instream 
-    # @param [Integer] offset 
-    # @param [Integer] origin 
-    # @return [FFI::Pointer(*Void)] 
-    # @scope class
-    callback :seek_callback, [:pointer, :long, :int], :pointer
-    
+      
     # (Not documented)
     # 
     # <em>This entry is only for documentation and no real method. The FFI::Enum can be accessed via #enum_type(:curlsocktype).</em>
@@ -2411,49 +2399,9 @@ module Curl
     # @return [nil] 
     # @scope class
     attach_function :global_cleanup, :curl_global_cleanup, [], :void
-    
-    # (Not documented)
-    # 
-    # = Fields:
-    # :data ::
-    #   (String) 
-    # :next_ ::
-    #   (FFI::Pointer(*Slist)) 
-    module SlistWrappers
-      # @param [String] string 
-      # @return [Slist] 
-      def append(string)
-        Slist.new CurlFFI.slist_append(self, string)
-      end
-      
-      # @return [nil] 
-      def free_all()
-        CurlFFI.slist_free_all(self)
-      end
-    end
-    
-    class Slist < FFI::Struct
-      include SlistWrappers
-      layout :data, :string,
-            :next_, :pointer
-    end
-    
-    # (Not documented)
-    # 
-    # @method slist_append(slist, string)
-    # @param [Slist] slist 
-    # @param [String] string 
-    # @return [Slist] 
-    # @scope class
-    attach_function :slist_append, :curl_slist_append, [Slist, :string], Slist
-    
-    # (Not documented)
-    # 
-    # @method slist_free_all(slist)
-    # @param [Slist] slist 
-    # @return [nil] 
-    # @scope class
-    attach_function :slist_free_all, :curl_slist_free_all, [Slist], :void
+       
+    attach_function :slist_append, :curl_slist_append, [:pointer, :string], :pointer
+    attach_function :slist_free_all, :curl_slist_free_all, [:pointer], :void
     
     # (Not documented)
     # 
@@ -2892,8 +2840,12 @@ module Curl
     typedef :long_long, :curl_off_t
 
     # function callbacks to be passed to opts
-    callback :string_function, [:string, :size_t, :size_t, :pointer], :size_t
+    callback :string_function, [:pointer, :size_t, :size_t, :pointer], :size_t
     callback :progress_function, [:pointer, :double, :double, :double, :double], :int
+
+    # internal callbacks passed to curl
+    callback :read_function, [:pointer, :size_t, :size_t, :pointer], :size_t
+    callback :seek_function, [:pointer, :curl_off_t, :int], :int
 
     attach_function :easy_setopt_long, :curl_easy_setopt, [:pointer, :option, :long], :code
     attach_function :easy_setopt_string, :curl_easy_setopt, [:pointer, :option, :string], :code
@@ -2903,7 +2855,8 @@ module Curl
     # Callback-supporting opts
     attach_function :easy_setopt_string_function, :curl_easy_setopt, [:pointer, :option, :string_function], :code
     attach_function :easy_setopt_progress_function, :curl_easy_setopt, [:pointer, :option, :progress_function], :code
-    
+    attach_function :easy_setopt_read_function, :curl_easy_setopt, [:pointer, :option, :read_function], :code
+    attach_function :easy_setopt_seek_function, :curl_easy_setopt, [:pointer, :option, :seek_function], :code
 
     # TODO this appears broken
     def self.easy_setopt(handle, option, value)
