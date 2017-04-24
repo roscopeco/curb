@@ -14,6 +14,13 @@ module Curl
   CURB_VER_MIN    = 0
   CURB_VER_MIC    = 1
   CURB_VER_PATCH  = 7
+  
+  HTTP_ANY = 0
+  HTTP_1_0 = 1
+  HTTP_1_1 = 2
+  HTTP_2_0 = 3
+  HTTP_2_TLS = 4
+  HTTP_2_PRIOR_KNOWLEDGE = 5
       
   def self.http(verb, url, post_body=nil, put_data=nil, &block)
     handle = Thread.current[:curb_curl] ||= Curl::Easy.new

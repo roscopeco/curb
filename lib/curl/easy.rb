@@ -456,7 +456,8 @@ module Curl
     end
 
     def close
-      # TODO slists?
+      raise RuntimeError, "Cannot close while request is in progress" if @close_locked
+
       # TODO this makes it segfault...
       #Core.easy_cleanup(handle)    
       #h = handle    # get new handle
@@ -476,6 +477,7 @@ module Curl
       end
 
       Core.easy_setopt(handle, :url, url)
+      Core.easy_setopt(handle, :http_version, @http_version || 0);
 
       Core.easy_setopt(handle, :username, username) if !username.nil?
       Core.easy_setopt(handle, :password, password) if !password.nil?
@@ -619,10 +621,14 @@ module Curl
     # the configured HTTP Verb.
     #
     def perform
+      @close_locked = true
+
       self.multi = Curl::Multi.new if self.multi.nil?
       self.multi.add self
       ret = self.multi.perform
       self.multi.remove self
+
+      @close_locked = false
 
       if self.last_result_code != :e_ok && self.on_failure.nil?
         error = Curl::Easy.error(self.last_result)
@@ -663,8 +669,12 @@ module Curl
     #  easy.version = Curl::HTTP_NONE
     #
     def version=(http_version)
-      set :http_version, http_version
+      @http_version = http_version
     end
+
+    def version
+      @http_version
+    end    
 
     # call-seq:
     #   easy.url                                         => string
@@ -1301,7 +1311,7 @@ module Curl
       # Curb API stipulates empty header when no headers received, 
       # or (I think) if we've handled them with a handler, so ensure that.
       @header_str ||= ""
-      @body_str ||= ""
+      @body_str ||= "" unless @on_body
 
       begin; @on_complete.call(self)         if @on_complete                                ; rescue => ex; end;
       begin; @on_failure.call(self, code)    if @on_failure    && curl_result != 0          ; rescue => ex; end; 
