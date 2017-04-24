@@ -33,6 +33,7 @@ module Curl
       @proxy_tunnel = false      
       @header_in_body = false
       @dns_cache_timeout = 60
+      @resolve_mode = :auto
 
       yield self if block_given?      
     end
@@ -45,8 +46,14 @@ module Curl
       @header_str
     end
 
-    def reset(*args)
+    def reset
+      # TODO implement this...
+      {}
     end
+
+    def put_data
+      @put_data
+    end    
       
     def put_data=(data)
       set_internal_put_upload(Upload.new(data))
@@ -79,6 +86,8 @@ module Curl
       else
         raise RuntimeError, "PUT data must respond to read or to_s"
       end
+
+      @put_data = data
     end
 
     # call-seq:
@@ -246,9 +255,20 @@ module Curl
       @ssl_verify_peer = (bool ? true : false)
     end
     
-    def resolve_mode(*args)
+    RESOLVE_MODES = [:auto, :ipv4, :ipv6]    
+
+    def resolve_mode
+      @resolve_mode
     end
 
+    def resolve_mode=(sym)
+      unless RESOLVE_MODES.include?(sym)
+        raise ArgumentError, "Must set to one of :auto, :ipv4, :ipv6"
+      end
+      
+      @resolve_mode = sym
+    end
+    
     def headers=(headers)
       @headers = headers
     end
@@ -370,7 +390,6 @@ module Curl
     end
 
     def last_effective_url
-      ptr = Core::OutPtr.new
       Core.easy_getinfo(handle, :effective_url,  ptr)
 
       # make a pointer from the out-int, get string, and dup to be safe.
@@ -494,6 +513,15 @@ module Curl
       Core.easy_setopt(handle, :ssl_verifypeer, ssl_verify_peer? ? 1 : 0)
       Core.easy_setopt(handle, :ssl_verifyhost, ssl_verify_host? ? 1 : 0)
 
+      case @resolve_mode
+      when :auto
+        Core.easy_setopt(handle, :ipresolve, Core::IPRESOLVE_WHATEVER)
+      when :ipv4
+        Core.easy_setopt(handle, :ipresolve, Core::IPRESOLVE_V4)
+      when :ipv6
+        Core.easy_setopt(handle, :ipresolve, Core::IPRESOLVE_V6)
+      end        
+
       # SSL
       Core.easy_setopt(handle, :sslcert, cert) if !cert.nil?
       Core.easy_setopt(handle, :sslcerttype, certtype) if !certtype.nil?
@@ -521,13 +549,6 @@ module Curl
       Core.easy_setopt(handle, :cookie, cookies) if !cookies.nil?
 
       # TODO The metric fuck-ton of other setup that needs doing...
-    end
-
-    def post_perform_cleanup
-      if @headers_slist
-        Core.slist_free_all(@headers_slist)
-        @headers_slist = nil
-      end
     end
 
     alias body body_str
@@ -583,8 +604,6 @@ module Curl
         error = Curl::Easy.error(self.last_result)
         raise error.first.new(error.last)
       end
-
-      post_perform_cleanup
 
       true
     end
@@ -1244,14 +1263,21 @@ module Curl
       @last_result_code = code
     end
 
-    # Multi calls this when we're done, and it handles calling the handler procs...
+    # Multi calls this when we're done, and it handles calling the handler procs and
+    # cleaning up (freeing slists etc)
     def handle_easy_completed(curl_result)
       code, ex = self.response_code, nil
       self.last_result_code = curl_result
 
+      if @headers_slist
+        Core.slist_free_all(@headers_slist)
+        @headers_slist = nil
+      end
+
       # Curb API stipulates empty header when no headers received, 
       # or (I think) if we've handled them with a handler, so ensure that.
       @header_str ||= ""
+      @body_str ||= ""
 
       begin; @on_complete.call(self)         if @on_complete                                ; rescue => ex; end;
       begin; @on_failure.call(self, code)    if @on_failure    && curl_result != 0          ; rescue => ex; end; 
