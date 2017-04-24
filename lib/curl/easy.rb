@@ -52,7 +52,9 @@ module Curl
       @on_missing = nil
       @on_failure = nil
       @on_success = nil
-      
+      @on_body = nil
+      @on_header = nil
+
       yield self if block_given?      
     end
           
