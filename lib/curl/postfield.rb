@@ -25,7 +25,7 @@ module Curl
             # have block and remote
             new(args[0], nil, nil, nil, args[1], blk)
           else
-            # have local onlg
+            # have local only
             new(args[0], nil, nil, args[1], args[1], nil)
           end
         else
@@ -77,6 +77,7 @@ module Curl
         name = Curl.escape(name)
         content = if @content_proc
           # TODO original curb does this, but maybe shouldn't? What about side-effects?
+          # however, easy.http_post relies on it...
           @content_proc.call(self)
         elsif @content
           @content
@@ -107,6 +108,10 @@ module Curl
 
     # API Compatibility
     alias :set_content_proc :content_proc
+
+    def get_content_proc
+      @content_proc
+    end    
 
     private 
 

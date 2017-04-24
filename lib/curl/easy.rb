@@ -32,7 +32,7 @@ module Curl
       @unrestricted_auth = false
       @proxy_tunnel = false      
       @header_in_body = false
-      @http_auth_types = :basic
+      @dns_cache_timeout = 60
 
       yield self if block_given?      
     end
@@ -51,7 +51,32 @@ module Curl
     def put_data=(*args)
     end
 
-    def post_body=(*args)
+    # call-seq:
+    #   easy.post_body                                  => string or nil
+    #
+    # Obtain the POST body used in this Curl::Easy instance.
+    def post_body
+      @post_body
+    end
+    
+    # call-seq:
+    #   easy.post_body = "some=form%20data&to=send"      => string or nil
+    # 
+    # Sets the POST body of this Curl::Easy instance.  This is expected to be
+    # URL encoded; no additional processing or encoding is done on the string.
+    # The content-type header will be set to application/x-www-form-urlencoded.
+    # 
+    # This is handy if you want to perform a POST against a Curl::Multi instance.
+    def post_body=(data)
+      if (@post_body = data.to_s)
+        Core.easy_setopt(handle, :post, true)
+        Core.easy_setopt(handle, :postfields, data)
+        Core.easy_setopt(handle, :postfieldsize, data.length)
+        data
+      else
+        Core.easy_setopt(handle, :httppost, 1)
+        nil
+      end
     end
 
     def on_progress(&handler)
@@ -318,8 +343,6 @@ module Curl
       ptr = Core::OutPtr.new
       Core.easy_getinfo(handle, :effective_url,  ptr)
 
-      # TODO this doesn't work, because COW....
-      #
       # make a pointer from the out-int, get string, and dup to be safe.
       # The memory stays around until curl_easy_cleanup is called, butif the
       # string lasts longer there'll be a segfault at some random time later...
@@ -329,7 +352,10 @@ module Curl
       #
       # nil return is intentional, btw!
       if !(s = ptr.to_pointer.read_string).empty?
-        s.dup.force_encoding(__ENCODING__)
+        s = s.dup
+        s[0] = s[0] # TODO test this circumvents COW (forces copy)
+        s.force_encoding(__ENCODING__)
+        s
       end      
     end
     
@@ -809,6 +835,7 @@ module Curl
     alias delete http_delete
 
     def http(verb)
+      raise "Invalid HTTP VERB, must response to 'to_s'" unless verb.respond_to?(:to_s)
       Core.easy_setopt(handle, :customrequest, verb.to_s)
       begin
         return self.perform
@@ -826,6 +853,104 @@ module Curl
     def http_put(data)
     end
 
+    # Build multipart form (with curl_formadd) for POST.
+
+    # first and last are both Core::OutPtr instances
+    #
+    # returns [first, last]
+    #
+    # N.B. This method will overwrite the 'content' field of any PostField that
+    # also has a content_proc. The C extension doesn't do this, but it's needed 
+    # here to stop temporary string data potentially being GCd between building
+    # the form, and doing the perform (since that data isn't referenced from anywhere
+    # else).
+    #
+    # I don't envisage this being a problem, because:
+    #
+    #   * The C extension wouldn't ever actually use the content anyway if there
+    #     was a proc.
+    #
+    #   * So really it's only an issue if anyone was using content as some
+    #     place to stash data.
+    #
+    # If it becomes a problem, it'll have to be revisited (a threadlocal stash
+    # or something will work, but this is faster and less magic).
+    #
+    def build_multipart_form(arg, first = Core::OutPtr.new, last = Core::OutPtr.new)
+      if (arg.respond_to? :each)
+        arg.each { |arg| first, last = build_multipart_form(arg, first, last) }
+        [first, last]
+      else
+        raise Err::ArgumentException, "Cannot process non-postfield argument" unless arg.is_a? PostField
+        postfield = arg
+        
+        raise Err::InvalidPostFieldError, "Cannot post unnamed field" if (name = postfield.name).nil?
+
+        args = [first, last, :formoption, :form_ptrname, :string, name, :formoption, :form_namelength, :int, name.bytesize]
+
+        if (localfile = postfield.local_file) || (remotefile = postfield.remote_file)
+          # is a file upload          
+          if (content_proc = postfield.get_content_proc)
+            # with content_proc
+            raise Err::InvalidPostFieldError, "Cannot post file upload field with no filename" unless remotefile
+            postfield.content = content = content_proc.call(postfield)
+            content_type = postfield.content_type
+            
+            args  << :formoption << :form_buffer            << :string  << remotefile
+            args  << :formoption << :form_bufferptr         << :string  << content
+            args  << :formoption << :form_bufferlength      << :int     << content.bytesize
+            (args << :formoption << :form_contenttype       << :string  << content_type) if content_type
+          elsif (content = postfield.content)
+            # with content
+            raise Err::InvalidPostFieldError, "Cannot post file upload field with no filename" unless remotefile
+            content_type = postfield.content_type
+            args  << :formoption << :form_buffer            << :string  << remotefile
+            args  << :formoption << :form_bufferptr         << :string  << content
+            args  << :formoption << :form_bufferlength      << :int     << content.bytesize
+            (args << :formoption << :form_contenttype       << :string  << content_type) if content_type
+          elsif localfile
+            # with local filename
+            raise Err::InvalidPostFieldError, "Cannot post file upload field with no filename" unless localfile
+            remotefile ||= localfile
+            content_type = postfield.content_type
+            args  << :formoption << :form_file              << :string  << localfile
+            args  << :formoption << :form_filename          << :string  << remotefile
+            (args << :formoption << :form_contenttype       << :string  << content_type) if content_type
+          else
+            raise Err::InvalidPostFieldError, "Cannot post file upload field with no data"
+          end                    
+        else
+          # is a content field
+          if (content_proc = postfield.get_content_proc)
+            postfield.content = content = content_proc.call(postfield)
+          end
+
+          raise Err::InvalidPostFieldError, "Cannot post content field with no data" unless content
+          
+          content_type = postfield.content_type
+          args  << :formoption  << :form_ptrcontents      << :string  << content
+          args  << :formoption  << :form_contentslength   << :int     << content.bytesize
+          (args << :formoption  << :form_contenttype      << :string  << content_type) if content_type            
+        end
+
+        # do call
+        args << :formoption << :form_end
+        if (result = Core.formadd(*args)) != :formadd_ok
+          # if first isn't NULL, this isn't our first go-around, so free whatever
+          # list we've already allocated.
+          if !0.eql?(addr = first[:value])
+            Core.formfree(FFI::Pointer.new(addr = first[:value]))
+          end
+
+          raise Err::InvalidPostFieldError, "Failed to add field - #{result.inspect}"
+        end
+
+        
+        [first, last]
+      end      
+    end
+    
+
     #
     # call-seq:
     #   easy.http_post(url, "some=urlencoded%20form%20data&and=so%20on") => true
@@ -842,7 +967,37 @@ module Curl
     # in order to set ignore_content_length true. See #http_post for more
     # information.
     #
+    # N.B. If you pass PostFields in that have both content and a content_proc, the content
+    # will be overwritten with the data from the content_proc. This deviates from the API of
+    # the original C extension. There's more information on this in the source 
+    # (see build_multipart_form comment in easy.rb).
     def http_post(*args)
+      Core.easy_setopt(handle, :customrequest, FFI::Pointer::NULL)
+
+      if (multipart_form_post?)
+        # build multipart form
+        first, last = build_multipart_form(args)
+        firstptr = FFI::Pointer.new(first[:value])        
+
+        Core.easy_setopt(handle, :post, false)
+        Core.easy_setopt(handle, :httppost, firstptr)
+
+        perform
+
+        Core.formfree(firstptr)
+      else
+        # TODO check Postfield.file and raise error before to_s fails
+        postbody = args.join('&')
+
+        # if the function call above returns an empty string because no additional arguments were passed this makes sure
+        # a previously set easy.post_body = "arg=foo&bar=bin"  will be honored 
+        self.post_body = postbody if postbody && postbody.length > 0
+
+        # just make sure something is set in post_body, because that method enables the post options for curl.
+        self.post_body ||= ""
+
+        self.perform
+      end      
     end      
     
     alias post http_post

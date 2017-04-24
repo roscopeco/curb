@@ -247,8 +247,12 @@ module Curl
         raise errors unless errors.empty?
       end
 
+      def default_timeout=(val)
+        @default_timeout = val
+      end        
 
-      def default_timeout(*args)
+      def default_timeout
+        @default_timeout ||= 100
       end
 
       def error(code)
@@ -297,7 +301,8 @@ module Curl
       easies.size > 0 || (!defined?(@running_count) || running_count > 0)
     end    
 
-    def requests(*args)
+    def requests
+      @requests ||= []
     end
 
     def pipeline=(*args)
@@ -306,7 +311,8 @@ module Curl
     def max_connects=(*args)
     end      
 
-    def idle?(*args)
+    def idle?
+      @idle ||= true
     end
 
     def cancel!(*args)
@@ -365,8 +371,6 @@ module Curl
     #   multi.get_timeout
     #
     # @return [ Integer ] The timeout.
-    #
-    # @raise [ Ethon::Errors::MultiTimeout ] If getting the timeout fails.
     def get_timeout
       code = Core.multi_timeout(handle, @timeout)
       raise_error(code) unless code == :OK
@@ -393,9 +397,6 @@ module Curl
     #   multi.set_fds
     #
     # @return [ void ]
-    #
-    # @raise [ Ethon::Errors::MultiFdset ] If setting the file descriptors fails.
-    # @raise [ Ethon::Errors::Select ] If select fails.
     def set_fds(timeout)
       code = Core.multi_fdset(handle, @fd_read, @fd_write, @fd_excep, @max_fd)
       raise_error(code) unless code == :OK

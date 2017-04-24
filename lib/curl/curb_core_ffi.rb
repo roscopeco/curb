@@ -4,7 +4,22 @@
 # Right now it's a mix of generated code, borrowed bits from other 
 # projects, and hand-rolled stuff thrown together in whatever order
 # will compile...
-#   
+# 
+# KNOWN ISSUES:
+#
+#    Sometimes segfaults on Windows in Core.form_add. This has been demonstrated with the
+#    two-argument version of the PostField constructor (so curl_formadd is getting FILE 
+#    and FILENAME).
+#
+#           * Things that have been checked = args going into C are correct,
+#             FFI type mappings seem ok, varargs isn't the issue.
+#
+#    Seems like it something could be getting GCd and a stale pointer making it to
+#    to C, but everything passed in is coming from instance vars so not sure...
+#
+#    Happens maybe 1 time in 5, and I've run the exact same code manually and 
+#    it didn't happen once in > 10000 runs.
+
 
 require 'ffi'
 
@@ -374,34 +389,6 @@ module Curl
             :userp, :pointer,
             :contentlen, :long
     end
-    
-    # (Not documented)
-    # 
-    # <em>This entry is only for documentation and no real method.</em>
-    # 
-    # @method _callback_progress_callback_(clientp, dltotal, dlnow, ultotal, ulnow)
-    # @param [FFI::Pointer(*Void)] clientp 
-    # @param [Float] dltotal 
-    # @param [Float] dlnow 
-    # @param [Float] ultotal 
-    # @param [Float] ulnow 
-    # @return [FFI::Pointer(*Void)] 
-    # @scope class
-    callback :progress_callback, [:pointer, :double, :double, :double, :double], :pointer
-    
-    # (Not documented)
-    # 
-    # <em>This entry is only for documentation and no real method.</em>
-    # 
-    # @method _callback_xferinfo_callback_(clientp, dltotal, dlnow, ultotal, ulnow)
-    # @param [FFI::Pointer(*Void)] clientp 
-    # @param [Integer] dltotal 
-    # @param [Integer] dlnow 
-    # @param [Integer] ultotal 
-    # @param [Integer] ulnow 
-    # @return [FFI::Pointer(*Void)] 
-    # @scope class
-    callback :xferinfo_callback, [:pointer, :long, :long, :long, :long], :pointer
     
     # (Not documented)
     # 
@@ -2288,10 +2275,10 @@ module Curl
     # :formadd_last ::
     #   libcurl was built with this disabled
     # 
-    # @method _enum_for_mcode_
+    # @method _enum_form_code
     # @return [Symbol]
     # @scope class
-    enum :for_mcode, [
+    enum :form_code, [
       :formadd_ok, 0,
       :formadd_memory, 1,
       :formadd_option_twice, 2,
@@ -2310,7 +2297,7 @@ module Curl
     # @param [FFI::Pointer(**Httppost)] last_post 
     # @return [Symbol from _enum_for_mcode_] 
     # @scope class
-    attach_function :formadd, :curl_formadd, [:pointer, :pointer], :for_mcode
+    attach_function :formadd, :curl_formadd, [OutPtr, OutPtr, :varargs], :form_code
     
     # (Not documented)
     # 
