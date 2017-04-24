@@ -11,3 +11,4 @@ ext/curb_config.h
 pkg/
 ext/mkmf.log
 *scratch.rb
+tests/server_lock*
