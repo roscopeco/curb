@@ -12,3 +12,4 @@ pkg/
 ext/mkmf.log
 *scratch.rb
 tests/server_lock*
+hs_err_pid*.log
