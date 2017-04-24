@@ -47,8 +47,38 @@ module Curl
 
     def reset(*args)
     end
+      
+    def put_data=(data)
+      set_internal_put_upload(Upload.new(data))
 
-    def put_data=(*args)
+      Core.easy_setopt(handle, :nobody, false)
+      Core.easy_setopt(handle, :upload, true)
+
+      Core.easy_setopt_read_function(handle, :readfunction, method(:internal_read_function).to_proc)
+      Core.easy_setopt_read_function(handle, :seekfunction, method(:internal_seek_function).to_proc)
+
+      headers = self.headers ||= {}
+      raise RuntimeError, "Must set headers as a HASH to modify the headers in an PUT request" unless headers.is_a?(Hash)
+
+      return data if data.nil?
+
+      if data.respond_to?(:read)
+        stat = data.stat
+        if !stat.nil? && headers['Content-Length'].nil?
+          headers['Expect'] ||= ""
+          size = stat.size
+          Core.easy_setopt(handle, :infilesize, size)
+        elsif headers['Content-Length'].nil? && headers['Transfer-Encoding'].nil?
+          headers['Transfer-Encoding'] = 'chunked'
+        elsif size = headers['Content-Length']
+          Core.easy_setopt(handle, :infilesize, size.to_i)
+        end
+      elsif data.respond_to?(:to_s)    # TODO should be to_str, not to_s? - everything responds to to_s...
+        headers['Expect'] ||= ""
+        Core.easy_setopt(handle, :infilesize, data.to_s.length)
+      else
+        raise RuntimeError, "PUT data must respond to read or to_s"
+      end
     end
 
     # call-seq:
@@ -414,6 +444,21 @@ module Curl
       end
       Core.easy_setopt(handle, :unrestricted_auth, unrestricted_auth? ? 1 : 0)
       
+      # headers
+      slist = nil
+      if headers = self.headers
+        headers = if headers.is_a?(Hash) || headers.is_a?(Array)
+          headers.each do |k,v|
+            slist = Core::slist_append(slist, v.nil? ? k.to_s : k.to_s + ": " + v.to_s)
+          end
+        else
+          slist = Core::slist_append(slist, headers.to_s)
+        end
+        @header_slist = slist, Core::method(:slist_free_all)
+        Core.easy_setopt(handle, :httpheader, slist)        
+      else
+        @header_slist = nil
+      end
       
       Core.easy_setopt(handle, :httpauth, 16)
       # TODO Core.easy_setopt(handle, :HTTPAUTH, http_auth_types)
@@ -478,6 +523,13 @@ module Curl
       # TODO The metric fuck-ton of other setup that needs doing...
     end
 
+    def post_perform_cleanup
+      if @headers_slist
+        Core.slist_free_all(@headers_slist)
+        @headers_slist = nil
+      end
+    end
+
     alias body body_str
     alias head header_str
     
@@ -531,6 +583,8 @@ module Curl
         error = Curl::Easy.error(self.last_result)
         raise error.first.new(error.last)
       end
+
+      post_perform_cleanup
 
       true
     end
@@ -851,6 +905,9 @@ module Curl
     # see easy.http_put
     #
     def http_put(data)
+      Core.easy_setopt(handle, :customrequest, nil)
+      self.put_data = data
+      perform
     end
 
     # Build multipart form (with curl_formadd) for POST.
@@ -1187,6 +1244,27 @@ module Curl
       @last_result_code = code
     end
 
+    # Multi calls this when we're done, and it handles calling the handler procs...
+    def handle_easy_completed(curl_result)
+      code, ex = self.response_code, nil
+      self.last_result_code = curl_result
+
+      # Curb API stipulates empty header when no headers received, 
+      # or (I think) if we've handled them with a handler, so ensure that.
+      @header_str ||= ""
+
+      begin; @on_complete.call(self)         if @on_complete                                ; rescue => ex; end;
+      begin; @on_failure.call(self, code)    if @on_failure    && curl_result != 0          ; rescue => ex; end; 
+      begin; @on_redirect.call(self, code)   if @on_redirect   && code > 300 && code < 400  ; rescue => ex; end;
+      begin; @on_missing.call(self, code)    if @on_missing    && code > 400 && code < 500  ; rescue => ex; end;
+      begin; @on_failure.call(self, code)    if @on_failure    && code > 500 && code <= 999 ; rescue => ex; end;
+      begin
+        @on_success.call(self) if @on_success && ((code > 200 && code < 300) || code == 0)  
+      rescue => ex; end
+
+      warn "Uncaught exception from callback" if ex
+    end
+
     #################### CALLBACK IMPLEMENTATIONS ############################
     # Note: these MUST return a Numeric, or "hilarity" will ensue. FFI uses NUM2LL to convert
     # the return value, so if you get weird TypeErrors with an incomplete stack trace, check 
@@ -1199,7 +1277,10 @@ module Curl
     # so now we don't do that...
 
     # Passed to Curl to handle body data.
-    def body_callback(str, size, n, ignored)
+    def body_callback(ptr, size, n, ignored)
+      length = size*n
+      str = ptr.read_bytes(length).force_encoding(__ENCODING__)
+
       if (@on_body)
         @on_body.call(str)
       else
@@ -1209,7 +1290,10 @@ module Curl
     end     
 
     # Passed to Curl to handle header data.
-    def header_callback(str, size, n, ignored)
+    def header_callback(ptr, size, n, ignored)
+      length = size*n
+      str = ptr.read_bytes(length).force_encoding(__ENCODING__)
+
       if (@on_header)
         @on_header.call(str)
       else
@@ -1233,26 +1317,68 @@ module Curl
     public
     ################## END CALLBACK IMPLEMENTATIONS ##########################
 
-    # Multi calls this when we're done, and it handles calling the handler procs...
-    def handle_easy_completed(curl_result)
-      code, ex = self.response_code, nil
-      self.last_result_code = curl_result
+    ################## PUT HANDLING ##########################
+    # internal class for sending large files
+    class Upload
+      def initialize(stream)
+        @stream = stream
+        @offset = 0
+      end
+      
+      attr_accessor :stream, :offset
+    end 
 
-      # Curb API stipulates empty header when no headers received, 
-      # or (I think) if we've handled them with a handler, so ensure that.
-      @header_str ||= ""
+    def internal_read_function(ptr, size, nmemb, ignored)
+      read_bytes = size * nmemb
 
-      begin; @on_complete.call(self)         if @on_complete                                ; rescue => ex; end;
-      begin; @on_failure.call(self, code)    if @on_failure    && curl_result != 0          ; rescue => ex; end; 
-      begin; @on_redirect.call(self, code)   if @on_redirect   && code > 300 && code < 400  ; rescue => ex; end;
-      begin; @on_missing.call(self, code)    if @on_missing    && code > 400 && code < 500  ; rescue => ex; end;
-      begin; @on_failure.call(self, code)    if @on_failure    && code > 500 && code <= 999 ; rescue => ex; end;
-      begin
-        @on_success.call(self) if @on_success && ((code > 200 && code < 300) || code == 0)  
-      rescue => ex; end
+      upload = get_internal_put_upload
+      stream = upload.stream
 
-      warn "Uncaught exception from callback" if ex
-    end    
+      if stream.respond_to?(:read)      
+        data = stream.read(read_bytes)
+        if data
+          ptr.write_bytes(data, 0, data.length)
+          read_bytes
+        else
+          0
+        end
+      elsif stream.respond_to?(:to_s)
+        data = stream.to_s
+        remaining = data.length - (offset = upload.offset)
 
+        if remaining < read_bytes          
+          ptr.write_bytes(data[offset,remaining], 0, remaining) if remaining > 0
+          remaining
+        elsif remaining > read_bytes
+          ptr.write_bytes(data[offset,read_bytes], 0, read_bytes)
+          upload.offset += read_bytes
+          read_bytes
+        else
+          ptr.write_bytes(data[offset..-1], 0, remaining)
+          remaining
+        end        
+      else
+        0
+      end      
+    end
+
+    def internal_seek_function(ignored, offset, origin)      
+      upload = get_internal_put_upload
+      if (stream = upload.stream).respond_to?(:seek)
+        stream.seek(offset, IO::SEEK_SET)
+      else
+        # This OK because curl only uses SEEK_SET as per the documentation
+        upload.offset = offset
+      end
+    end
+
+    def get_internal_put_upload
+      Thread.current[:__curb_easy_upload__]
+    end
+    
+    def set_internal_put_upload(upload)
+      Thread.current[:__curb_easy_upload__] = upload
+    end        
+    ################## END PUT HANDLING ##########################
   end
 end
