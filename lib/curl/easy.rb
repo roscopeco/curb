@@ -390,7 +390,8 @@ module Curl
     end
 
     def last_effective_url
-      Core.easy_getinfo(handle, :effective_url,  ptr)
+      ptr = FFI::MemoryPointer.new(:pointer)
+      Core.easy_getinfo(handle, :effective_url, ptr)
 
       # make a pointer from the out-int, get string, and dup to be safe.
       # The memory stays around until curl_easy_cleanup is called, butif the
@@ -400,11 +401,14 @@ module Curl
       # case that broke it. Still, I guess we'll see...
       #
       # nil return is intentional, btw!
-      if !(s = ptr.to_pointer.read_string).empty?
-        s = s.dup
-        s[0] = s[0] # TODO test this circumvents COW (forces copy)
-        s.force_encoding(__ENCODING__)
-        s
+      strptr = ptr.read_string
+      unless strptr.null?
+        if !(s = strptr.read_string).empty?
+          s = s.dup
+          s[0] = s[0] # TODO test this circumvents COW (forces copy)
+          s.force_encoding(__ENCODING__)
+          s
+        end
       end      
     end
     

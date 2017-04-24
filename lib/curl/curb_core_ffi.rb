@@ -2919,7 +2919,7 @@ module Curl
     # @param [Symbol from _enum_info_] info 
     # @return [Symbol from _enum_code_] 
     # @scope class
-    attach_function :easy_getinfo, :curl_easy_getinfo, [:pointer, :info, OutPtr], :code
+    attach_function :easy_getinfo, :curl_easy_getinfo, [:pointer, :info, :pointer], :code
     
     # NAME curl_easy_duphandle()
     # 
