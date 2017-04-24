@@ -35,6 +35,24 @@ module Curl
       @dns_cache_timeout = 60
       @resolve_mode = :auto
 
+      @proxy_url = nil
+      @proxy_port = nil
+      @local_port = nil
+      @local_port_range = nil
+      @follow_location = nil
+      @fetch_file_time = nil
+      @on_progress = nil
+      @enable_cookies = nil
+      @cookies = nil
+      @on_body = nil
+      @headers_slist = nil
+      @on_complete = nil
+      @on_failure = nil
+      @on_redirect = nil
+      @on_missing = nil
+      @on_failure = nil
+      @on_success = nil
+      
       yield self if block_given?      
     end
           
