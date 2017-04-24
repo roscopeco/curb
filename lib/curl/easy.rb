@@ -469,7 +469,6 @@ module Curl
       url = @url
       @body_str = nil
 
-      # TODO get headers
       # TODO get ftp commands
 
       if url.nil?
@@ -1045,7 +1044,7 @@ module Curl
 
         # do call
         args << :formoption << :form_end
-        if (result = Core.formadd(*args)) != :formadd_ok
+        if (result = Core.formadd(*args)) != :formadd_ok      # TODO this sometimes segfaults, sometimes doesn't
           # if first isn't NULL, this isn't our first go-around, so free whatever
           # list we've already allocated.
           if !0.eql?(addr = first[:value])
