@@ -421,7 +421,7 @@ module Curl
       # case that broke it. Still, I guess we'll see...
       #
       # nil return is intentional, btw!
-      strptr = ptr.read_string
+      strptr = ptr.read_pointer
       unless strptr.null?
         if !(s = strptr.read_string).empty?
           s = s.dup
