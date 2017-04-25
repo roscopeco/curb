@@ -1,3 +1,49 @@
+# Curb FFI - FFI port of Curl, the popular Ruby libcurl bindings.
+
+This branch is a work-in-progress port of the original Curb library to an FFI backend. The aims
+of this project are:
+
+  * To remove all C code and hard-dependencies on MRI, allowing Curb to be used
+    anywhere there's a working implementation of Ruby FFI.
+
+  * To completely replicate the API of Curb 0.9.x, warts and all. This should be a 100%
+    no-work drop-in for the C extension, no matter how you're using it.
+
+  * To fully support JRuby and Rubinius if possible, and work on all major
+    platforms (i.e. Linux, Windows and Mac).
+
+  * To merge into the main project (at http://github.com/taf2/curb) and replace
+    the C codebase (The C may be maintained as a 'legacy' codebase, or this
+    may become a new major version - we haven't really discussed that yet).
+
+This branch is currently under active development, and is far from 100% complete - many
+things don't work as they should, or just plain don't work. Development is currently
+based on the reasonably-extensive tests from Curb, with a view to getting them to run,
+then to pass, on a test-by-test basis.
+
+At the time of writing, the focus is on `tc_curl_easy.rb`. Right now we're down to
+__2 fails, 2 errors__ (on MRI/Windows/x64). 
+
+If you're interested in playing with the library, then don't forget that __you can help__!
+
+  * File bugs when things go wrong - help us know where we should focus our attention.
+
+  * Make Pull Requests when you can fix them.
+
+  * Let us know you're using it - the more interest there is, the greater our motivation!
+
+Currently known issues (not exhaustive):
+
+  * Segfaults (_at least_ Windows and Linux, most likely across the board) in certain 
+    Curl::Multi functions. These cause both MRI and the JVM to core dump.
+
+  * Curl version checking is not yet implemented. Make sure you're using a recent
+    version of curl, or we may blindly call functions that don't exist in your lib.
+
+  * Most of the code in Core is a mess. This will improve in time.
+
+The following is the original Curb readme.
+
 # Curb - Libcurl bindings for Ruby [![Build Status](https://travis-ci.org/taf2/curb.svg?branch=master)](https://travis-ci.org/taf2/curb)
 
 * [rubydoc rdoc](http://www.rubydoc.info/github/taf2/curb/)
@@ -11,7 +57,7 @@ Curb is a work-in-progress, and currently only supports libcurl's 'easy' and 'mu
 
 ## License
 
-Curb is copyright (c)2006 Ross Bamford, and released under the terms of the 
+Curb is copyright (c)2006-2017 Ross Bamford & Todd Fisher, and released under the terms of the 
 Ruby license. See the LICENSE file for the gory details. 
 
 ## You will need
