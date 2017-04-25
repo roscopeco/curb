@@ -23,7 +23,7 @@ module Curl
     end
     
     def initialize(url = nil)
-      @url = url if !url.nil?
+      @url = url
 
       # defaults
       @ssl_verify_peer = true
@@ -44,6 +44,8 @@ module Curl
       @on_progress = nil
       @enable_cookies = nil
       @cookies = nil
+      @cookiefile = nil
+      @cookiejar = nil
       @on_body = nil
       @headers_slist = nil
       @on_complete = nil
@@ -54,6 +56,13 @@ module Curl
       @on_success = nil
       @on_body = nil
       @on_header = nil
+
+      @header_str = nil
+      @body_str = nil
+      @ignore_content_length = false
+
+      @multipart_form_post = false
+      @post_body = nil
 
       yield self if block_given?      
     end
@@ -976,9 +985,11 @@ module Curl
     # If it becomes a problem, it'll have to be revisited (a threadlocal stash
     # or something will work, but this is faster and less magic).
     #
-    def build_multipart_form(arg, first = Core::OutPtr.new, last = Core::OutPtr.new)
+    def build_multipart_form(arg, first = FFI::MemoryPointer.new(:pointer), last = FFI::MemoryPointer.new(:pointer))
       if (arg.respond_to? :each)
-        arg.each { |arg| first, last = build_multipart_form(arg, first, last) }
+        arg.each do |arg| 
+          first, last = build_multipart_form(arg, first, last) 
+        end
         [first, last]
       else
         raise Err::ArgumentException, "Cannot process non-postfield argument" unless arg.is_a? PostField
@@ -1077,7 +1088,7 @@ module Curl
       if (multipart_form_post?)
         # build multipart form
         first, last = build_multipart_form(args)
-        firstptr = FFI::Pointer.new(first[:value])        
+        firstptr = first.read_pointer 
 
         Core.easy_setopt(handle, :post, false)
         Core.easy_setopt(handle, :httppost, firstptr)
