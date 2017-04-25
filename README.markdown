@@ -1,4 +1,4 @@
-# Curb FFI - FFI port of Curl, the popular Ruby libcurl bindings.
+# Curb FFI - FFI port of Curb, the popular Ruby libcurl bindings.
 
 This branch is a work-in-progress port of the original Curb library to an FFI backend. The aims
 of this project are:
@@ -8,6 +8,11 @@ of this project are:
 
   * To completely replicate the API of Curb 0.9.x, warts and all. This should be a 100%
     no-work drop-in for the C extension, no matter how you're using it.
+
+  * To retain and reuse as much of the original Curb ruby code as possible.
+
+  * To maintain the current standard of documentation in Curb (It's pretty well documented -
+    this mostly means not forgetting to copy the doc over from the C code to Ruby).
 
   * To fully support JRuby and Rubinius if possible, and work on all major
     platforms (i.e. Linux, Windows and Mac).
@@ -41,6 +46,8 @@ Currently known issues (not exhaustive):
     version of curl, or we may blindly call functions that don't exist in your lib.
 
   * Most of the code in Core is a mess. This will improve in time.
+
+  * Lots of little stuff, and some not-so-little stuff, is still not implemented.
 
 The following is the original Curb readme.
 
