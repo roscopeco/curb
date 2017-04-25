@@ -2324,20 +2324,20 @@ module Curl
     # 
     # @method easy_escape(handle, string, length)
     # @param [FFI::Pointer(*)] handle 
-    # @param [String] string 
+    # @param [FFI::Pointer(String)] string 
     # @param [Integer] length 
-    # @return [String] 
+    # @return [FFI::Pointer(String)] 
     # @scope class
-    attach_function :easy_escape, :curl_easy_escape, [:pointer, :string, :int], :string
+    attach_function :easy_escape, :curl_easy_escape, [:pointer, :pointer, :int], :pointer
     
     # (Not documented)
     # 
     # @method escape(string, length)
     # @param [String] string 
     # @param [Integer] length 
-    # @return [String] 
+    # @return [FFI::Pointer(String)] 
     # @scope class
-    attach_function :escape, :curl_escape, [:string, :int], :string
+    attach_function :escape, :curl_escape, [:string, :int], :pointer
     
     # (Not documented)
     # 
@@ -2346,7 +2346,7 @@ module Curl
     # @param [String] string 
     # @param [Integer] length 
     # @param [FFI::Pointer(*Int)] outlength 
-    # @return [String] 
+    # @return [FFI::Pointer(String)] 
     # @scope class
 
     # Returns a char * that has to be freed using curl_free
@@ -2357,7 +2357,7 @@ module Curl
     # @method unescape(string, length)
     # @param [String] string 
     # @param [Integer] length 
-    # @return [String] 
+    # @return [FFI::Pointer(String)] 
     # @scope class
     #attach_function :unescape, :curl_unescape, [:string, :int], :string
     

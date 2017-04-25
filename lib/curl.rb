@@ -81,10 +81,36 @@ module Curl
   end
 
   def self.escape(str)
-    URI.escape(str)
-  end
+    # TODO checkver > 0x070f04, use curl_escape if not
+    ptr = Core.escape(str, str.length)
+
+    result = if (ptr.null?)
+      ""
+    else
+      str = ptr.read_string.force_encoding(__ENCODING__)
+      str = str.dup
+      str[0] = str[0]   # TODO verify this forces a copy
+      str
+    end
+
+    Core.free(ptr)
+    result
+end
 
   def self.unescape(str)
-    URI.unescape(str)
+    # TODO checkver > 0x070f04, use curl_escape if not
+    ptr = Core.unescape(str, str.length)
+
+    result = if (ptr.null?)
+      ""
+    else
+      str = ptr.read_string.force_encoding(__ENCODING__)
+      str = str.dup
+      str[0] = str[0]   # TODO verify this forces a copy
+      str
+    end
+
+    Core.free(ptr)
+    result
   end
 end

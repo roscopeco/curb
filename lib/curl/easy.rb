@@ -23,7 +23,7 @@ module Curl
     end
     
     def initialize(url = nil)
-      @url = url if !url.nil?
+      @url = url
 
       # defaults
       @ssl_verify_peer = true
@@ -34,6 +34,8 @@ module Curl
       @header_in_body = false
       @dns_cache_timeout = 60
       @resolve_mode = :auto
+      @userpwd = nil
+      @proxypwd = nil
 
       @proxy_url = nil
       @proxy_port = nil
@@ -44,6 +46,8 @@ module Curl
       @on_progress = nil
       @enable_cookies = nil
       @cookies = nil
+      @cookiefile = nil
+      @cookiejar = nil
       @on_body = nil
       @headers_slist = nil
       @on_complete = nil
@@ -52,8 +56,16 @@ module Curl
       @on_missing = nil
       @on_failure = nil
       @on_success = nil
+      @on_debug = nil
       @on_body = nil
       @on_header = nil
+
+      @header_str = nil
+      @body_str = nil
+      @ignore_content_length = false
+
+      @multipart_form_post = false
+      @post_body = nil
 
       yield self if block_given?      
     end
@@ -178,7 +190,7 @@ module Curl
      def on_success(&handler)
       old, @on_success = @on_success, handler
       old      
-    end
+     end
 
     # call-seq:
     #   easy.on_failure {|easy,code| ... }               => &lt;old handler&gt;
@@ -244,7 +256,6 @@ module Curl
 
     attr_accessor :username
     attr_accessor :password
-    attr_accessor :userpwd
 
     attr_accessor :useragent
 
@@ -298,11 +309,39 @@ module Curl
     end
 
     def escape(str)
-      Curl.escape(str)
+      # TODO checkver > 0x070f04, use curl_escape if not
+      ptr = Core.easy_escape(handle, FFI::MemoryPointer.from_string(str), str.length)
+
+      result = if (ptr.null?)
+        ""
+      else
+        str = ptr.read_string.force_encoding(__ENCODING__)
+        str = str.dup
+        str[0] = str[0]   # TODO verify this actually forces a copy
+        str
+      end
+
+      Core.free(ptr)
+      result
     end
 
     def unescape(str)
-      Curl.unescape(str)
+      # TODO checkver > 0x070f04, use curl_escape if not
+      lenptr = FFI::MemoryPointer.new(:int)
+      ptr = Core.easy_unescape(handle, str, str.length, lenptr)
+
+      result = if (ptr.null?)
+        ""
+      else
+        length = lenptr.read_int
+        str = ptr.read_bytes(length).force_encoding(__ENCODING__)
+        str = str.dup
+        str[0] = str[0]   # TODO verify this actuall forces a copy
+        str
+      end
+
+      Core.free(ptr)
+      result
     end
 
     def verbose?
@@ -311,7 +350,6 @@ module Curl
     attr_accessor :http_auth_types
     attr_accessor :proxy_auth_types
     attr_accessor :proxy_type
-    attr_accessor :proxypwd
 
     attr_accessor :encoding
 
@@ -446,6 +484,11 @@ module Curl
     def response_code
       ptr = Core::OutPtr.new
       res = Core.easy_getinfo(handle, :response_code, ptr)
+
+      unless :e_ok.eql?(res)
+        raise RuntimeError, "Failed to get response_code: Curl call failed with #{res}"
+      end
+
       ptr.to_i
     end  
 
@@ -624,7 +667,7 @@ module Curl
 
       self.multi = Curl::Multi.new if self.multi.nil?
       self.multi.add self
-      ret = self.multi.perform
+      self.multi.perform
       self.multi.remove self
 
       @close_locked = false
@@ -759,15 +802,35 @@ module Curl
       set :interface, value
     end
 
+    # call-seq:
+    #   easy.userpwd                                     => string
+    #
+    # Obtain the username/password string that will be used for subsequent
+    # calls to +perform+.
+    def userpwd
+      @userpwd
+    end
+
     #
     # call-seq:
     #   easy.userpwd = string                            => string
     #
     # Set the username/password string to use for subsequent calls to +perform+.
     # The supplied string should have the form "username:password"
-    #
     def userpwd=(value)
-      set :userpwd, value
+      @userpwd = value
+    end
+
+    #
+    # call-seq:
+    #   easy.proxypwd                                    => string
+    #
+    # Obtain the username/password string that will be used for proxy
+    # connection during subsequent calls to +perform+. The supplied string
+    # should have the form "username:password"def userpwd=(value)
+
+    def proxypwd
+      @proxypwd
     end
 
     #
@@ -779,7 +842,7 @@ module Curl
     # form "username:password"
     #
     def proxypwd=(value)
-      set :proxyuserpwd, value
+      @proxypwd = value
     end
 
     # call-seq:
@@ -985,9 +1048,11 @@ module Curl
     # If it becomes a problem, it'll have to be revisited (a threadlocal stash
     # or something will work, but this is faster and less magic).
     #
-    def build_multipart_form(arg, first = Core::OutPtr.new, last = Core::OutPtr.new)
+    def build_multipart_form(arg, first = FFI::MemoryPointer.new(:pointer), last = FFI::MemoryPointer.new(:pointer))
       if (arg.respond_to? :each)
-        arg.each { |arg| first, last = build_multipart_form(arg, first, last) }
+        arg.each do |arg_e| 
+          first, last = build_multipart_form(arg_e, first, last) 
+        end
         [first, last]
       else
         raise Err::ArgumentException, "Cannot process non-postfield argument" unless arg.is_a? PostField
@@ -1086,7 +1151,7 @@ module Curl
       if (multipart_form_post?)
         # build multipart form
         first, last = build_multipart_form(args)
-        firstptr = FFI::Pointer.new(first[:value])        
+        firstptr = first.read_pointer 
 
         Core.easy_setopt(handle, :post, false)
         Core.easy_setopt(handle, :httppost, firstptr)
