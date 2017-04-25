@@ -309,11 +309,39 @@ module Curl
     end
 
     def escape(str)
-      Curl.escape(str)
+      # TODO checkver > 0x070f04, use curl_escape if not
+      ptr = Core.easy_escape(handle, FFI::MemoryPointer.from_string(str), str.length)
+
+      result = if (ptr.null?)
+        ""
+      else
+        str = ptr.read_string.force_encoding(__ENCODING__)
+        str = str.dup
+        str[0] = str[0]   # TODO verify this actually forces a copy
+        str
+      end
+
+      Core.free(ptr)
+      result
     end
 
     def unescape(str)
-      Curl.unescape(str)
+      # TODO checkver > 0x070f04, use curl_escape if not
+      lenptr = FFI::MemoryPointer.new(:int)
+      ptr = Core.easy_unescape(handle, str, str.length, lenptr)
+
+      result = if (ptr.null?)
+        ""
+      else
+        length = lenptr.read_int
+        str = ptr.read_bytes(length).force_encoding(__ENCODING__)
+        str = str.dup
+        str[0] = str[0]   # TODO verify this actuall forces a copy
+        str
+      end
+
+      Core.free(ptr)
+      result
     end
 
     def verbose?
