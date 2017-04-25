@@ -34,6 +34,8 @@ module Curl
       @header_in_body = false
       @dns_cache_timeout = 60
       @resolve_mode = :auto
+      @userpwd = nil
+      @proxypwd = nil
 
       @proxy_url = nil
       @proxy_port = nil
@@ -54,6 +56,7 @@ module Curl
       @on_missing = nil
       @on_failure = nil
       @on_success = nil
+      @on_debug = nil
       @on_body = nil
       @on_header = nil
 
@@ -187,7 +190,7 @@ module Curl
      def on_success(&handler)
       old, @on_success = @on_success, handler
       old      
-    end
+     end
 
     # call-seq:
     #   easy.on_failure {|easy,code| ... }               => &lt;old handler&gt;
@@ -253,7 +256,6 @@ module Curl
 
     attr_accessor :username
     attr_accessor :password
-    attr_accessor :userpwd
 
     attr_accessor :useragent
 
@@ -320,7 +322,6 @@ module Curl
     attr_accessor :http_auth_types
     attr_accessor :proxy_auth_types
     attr_accessor :proxy_type
-    attr_accessor :proxypwd
 
     attr_accessor :encoding
 
@@ -455,6 +456,11 @@ module Curl
     def response_code
       ptr = Core::OutPtr.new
       res = Core.easy_getinfo(handle, :response_code, ptr)
+
+      unless :e_ok.eql?(res)
+        raise RuntimeError, "Failed to get response_code: Curl call failed with #{res}"
+      end
+
       ptr.to_i
     end  
 
@@ -630,7 +636,7 @@ module Curl
     def perform
       self.multi = Curl::Multi.new if self.multi.nil?
       self.multi.add self
-      ret = self.multi.perform
+      self.multi.perform
       self.multi.remove self
 
       if self.last_result_code != :e_ok && self.on_failure.nil?
@@ -759,15 +765,35 @@ module Curl
       set :interface, value
     end
 
+    # call-seq:
+    #   easy.userpwd                                     => string
+    #
+    # Obtain the username/password string that will be used for subsequent
+    # calls to +perform+.
+    def userpwd
+      @userpwd
+    end
+
     #
     # call-seq:
     #   easy.userpwd = string                            => string
     #
     # Set the username/password string to use for subsequent calls to +perform+.
     # The supplied string should have the form "username:password"
-    #
     def userpwd=(value)
-      set :userpwd, value
+      @userpwd = value
+    end
+
+    #
+    # call-seq:
+    #   easy.proxypwd                                    => string
+    #
+    # Obtain the username/password string that will be used for proxy
+    # connection during subsequent calls to +perform+. The supplied string
+    # should have the form "username:password"def userpwd=(value)
+
+    def proxypwd
+      @proxypwd
     end
 
     #
@@ -779,7 +805,7 @@ module Curl
     # form "username:password"
     #
     def proxypwd=(value)
-      set :proxyuserpwd, value
+      @proxypwd = value
     end
 
     # call-seq:
@@ -987,8 +1013,8 @@ module Curl
     #
     def build_multipart_form(arg, first = FFI::MemoryPointer.new(:pointer), last = FFI::MemoryPointer.new(:pointer))
       if (arg.respond_to? :each)
-        arg.each do |arg| 
-          first, last = build_multipart_form(arg, first, last) 
+        arg.each do |arg_e| 
+          first, last = build_multipart_form(arg_e, first, last) 
         end
         [first, last]
       else
