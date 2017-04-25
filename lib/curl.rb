@@ -21,6 +21,8 @@ module Curl
   HTTP_2_0 = 3
   HTTP_2_TLS = 4
   HTTP_2_PRIOR_KNOWLEDGE = 5
+
+  # TODO We need to be doing curl_global_init/cleanup somewhere...
       
   def self.http(verb, url, post_body=nil, put_data=nil, &block)
     handle = Thread.current[:curb_curl] ||= Curl::Easy.new
@@ -81,7 +83,6 @@ module Curl
   end
 
   def self.escape(str)
-    # TODO checkver > 0x070f04, use curl_escape if not
     ptr = Core.escape(str, str.length)
 
     result = if (ptr.null?)
@@ -98,7 +99,6 @@ module Curl
 end
 
   def self.unescape(str)
-    # TODO checkver > 0x070f04, use curl_escape if not
     ptr = Core.unescape(str, str.length)
 
     result = if (ptr.null?)
